@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pizza Parlor - Scarcity Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Inter:wght@400;500;600&family=Fredoka+One&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF6B6B;
+            --secondary: #4ECDC4;
+            --accent: #FFE66D;
+            --dark: #2C3E50;
+            --light: #FEFEFE;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .game-title {
+            font-family: 'Fredoka One', cursive;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .game-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .game-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .resource-bar {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            height: 8px;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .ingredient-item {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .ingredient-item:hover {
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+        
+        .ingredient-item.selected {
+            border-color: var(--secondary);
+            background: rgba(78, 205, 196, 0.1);
+        }
+        
+        .btn-action {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            transition: all 0.3s ease;
+        }
+        
+        .btn-action:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+        }
+        
+        .btn-action:disabled {
+            background: #ccc;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        
+        .feedback-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .feedback-message.show {
+            transform: translateX(0);
+        }
+        
+        .pizza-canvas {
+            background: radial-gradient(circle at center, #f8f9fa 0%, #e9ecef 100%);
+            border: 3px solid #dee2e6;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .topping {
+            position: absolute;
+            border-radius: 50%;
+            animation: dropIn 0.5s ease-out;
+        }
+        
+        @keyframes dropIn {
+            0% { transform: translateY(-50px) scale(0); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+    <!-- Navigation -->
+    <nav class="relative z-50 p-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="text-white text-xl font-bold">🍕 Pizza Parlor</div>
+            <div class="flex items-center space-x-4">
+                <div class="text-white text-sm">Day: <span id="currentDay" class="font-bold">1</span>/7</div>
+                <button onclick="showInstructions()" class="text-white hover:text-yellow-300 transition-colors text-sm">❓ Help</button>
+                <button onclick="window.location.href='index.html'" class="text-white hover:text-yellow-300 transition-colors text-sm">🏠 Home</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Game Header -->
+    <section class="relative z-10 pt-8 pb-8 px-6">
+        <div class="max-w-7xl mx-auto text-center">
+            <h1 class="game-title text-4xl md:text-6xl font-bold mb-4">Mama Mia's Pizza Challenge</h1>
+            <p class="text-white text-lg mb-8">Run a pizza restaurant for 7 days. Manage your limited ingredients, time, and money to make the most profit!</p>
+        </div>
+    </section>
+
+    <!-- Game Interface -->
+    <section class="relative z-10 pb-20 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid lg:grid-cols-3 gap-8">
+                <!-- Resources Panel -->
+                <div class="game-card rounded-2xl p-6">
+                    <h3 class="text-2xl font-bold mb-6 text-gray-800">📊 Resources</h3>
+                    
+                    <!-- Money -->
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-semibold text-gray-700">💰 Money</span>
+                            <span id="moneyDisplay" class="font-bold text-green-600">$100</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div id="moneyBar" class="resource-bar h-3 rounded-full" style="width: 100%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Time -->
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-semibold text-gray-700">⏰ Time Left</span>
+                            <span id="timeDisplay" class="font-bold text-blue-600">8 hours</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div id="timeBar" class="resource-bar h-3 rounded-full" style="width: 100%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Customer Satisfaction -->
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-semibold text-gray-700">😊 Customers</span>
+                            <span id="satisfactionDisplay" class="font-bold text-purple-600">100%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div id="satisfactionBar" class="resource-bar h-3 rounded-full" style="width: 100%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Daily Stats -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-bold text-gray-800 mb-2">Today's Stats</h4>
+                        <div class="text-sm text-gray-600">
+                            <div>Pizzas Made: <span id="pizzasMade" class="font-bold">0</span></div>
+                            <div>Revenue: $<span id="todayRevenue" class="font-bold">0</span></div>
+                            <div>Expenses: $<span id="todayExpenses" class="font-bold">0</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ingredients Selection -->
+                <div class="game-card rounded-2xl p-6">
+                    <h3 class="text-2xl font-bold mb-6 text-gray-800">🍅 Choose Ingredients</h3>
+                    <p class="text-gray-600 mb-4">Select ingredients for your pizza. Each costs money and takes time!</p>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="ingredient-item rounded-lg p-4 text-center" data-ingredient="cheese" data-cost="2" data-time="5">
+                            <div class="text-3xl mb-2">🧀</div>
+                            <div class="font-semibold">Cheese</div>
+                            <div class="text-sm text-gray-600">$2, 5min</div>
+                        </div>
+                        <div class="ingredient-item rounded-lg p-4 text-center" data-ingredient="pepperoni" data-cost="3" data-time="3">
+                            <div class="text-3xl mb-2">🍕</div>
+                            <div class="font-semibold">Pepperoni</div>
+                            <div class="text-sm text-gray-600">$3, 3min</div>
+                        </div>
+                        <div class="ingredient-item rounded-lg p-4 text-center" data-ingredient="mushrooms" data-cost="2" data-time="4">
+                            <div class="text-3xl mb-2">🍄</div>
+                            <div class="font-semibold">Mushrooms</div>
+                            <div class="text-sm text-gray-600">$2, 4min</div>
+                        </div>
+                        <div class="ingredient-item rounded-lg p-4 text-center" data-ingredient="peppers" data-cost="1" data-time="3">
+                            <div class="text-3xl mb-2">🌶️</div>
+                            <div class="font-semibold">Peppers</div>
+                            <div class="text-sm text-gray-600">$1, 3min</div>
+                        </div>
+                        <div class="ingredient-item rounded-lg p-4 text-center" data-ingredient="olives" data-cost="2" data-time="2">
+                            <div class="text-3xl mb-2">🫒</div>
+                            <div class="font-semibold">Olives</div>
+                            <div class="text-sm text-gray-600">$2, 2min</div>
+                        </div>
+                        <div class="ingredient-item rounded-lg p-4 text-center" data-ingredient="onions" data-cost="1" data-time="3">
+                            <div class="text-3xl mb-2">🧅</div>
+                            <div class="font-semibold">Onions</div>
+                            <div class="text-sm text-gray-600">$1, 3min</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                        <div class="flex justify-between items-center">
+                            <span class="font-semibold">Selected Ingredients:</span>
+                            <span id="ingredientCount" class="font-bold text-blue-600">0</span>
+                        </div>
+                        <div class="text-sm text-gray-600 mt-1">
+                            Total Cost: $<span id="totalCost">0</span> | Time: <span id="totalTime">0</span> min
+                        </div>
+                    </div>
+
+                    <button id="makePizzaBtn" onclick="makePizza()" class="w-full btn-action text-white py-3 rounded-lg font-semibold disabled:opacity-50" disabled>
+                        🍕 Make Pizza - Earn $15
+                    </button>
+                </div>
+
+                <!-- Pizza Preview & Results -->
+                <div class="game-card rounded-2xl p-6">
+                    <h3 class="text-2xl font-bold mb-6 text-gray-800">🎯 Your Pizza</h3>
+                    
+                    <!-- Pizza Canvas -->
+                    <div class="pizza-canvas w-48 h-48 mx-auto mb-6 flex items-center justify-center">
+                        <div id="pizzaToppings" class="relative w-full h-full"></div>
+                    </div>
+
+                    <!-- Customer Feedback -->
+                    <div id="customerFeedback" class="bg-gray-50 rounded-lg p-4 mb-4 hidden">
+                        <h4 class="font-bold text-gray-800 mb-2">Customer Review:</h4>
+                        <div id="feedbackText" class="text-gray-600"></div>
+                        <div id="feedbackRating" class="text-2xl mt-2"></div>
+                    </div>
+
+                    <!-- End Day Button -->
+                    <button id="endDayBtn" onclick="endDay()" class="w-full bg-purple-500 hover:bg-purple-600 text-white py-3 rounded-lg font-semibold transition-colors">
+                        🌅 End Day & Restock
+                    </button>
+                </div>
+            </div>
+
+            <!-- Progress Chart -->
+            <div class="game-card rounded-2xl p-6 mt-8">
+                <h3 class="text-2xl font-bold mb-6 text-gray-800">📈 Your Progress</h3>
+                <div id="progressChart" style="height: 300px;"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Instructions Modal -->
+    <div id="instructionsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-6">
+        <div class="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-96 overflow-y-auto">
+            <h2 class="text-3xl font-bold mb-6 text-gray-800">🍕 How to Play Pizza Parlor</h2>
+            <div class="space-y-4 text-gray-600">
+                <p><strong>Goal:</strong> Make as much money as possible in 7 days by selling pizzas!</p>
+                <p><strong>Resources:</strong> You start with $100 and 8 hours each day. Use them wisely!</p>
+                <p><strong>Making Pizzas:</strong> Select ingredients (each costs money and takes time), then click "Make Pizza"</p>
+                <p><strong>Strategy:</strong> Balance expensive ingredients with quick preparation time. Happy customers pay more!</p>
+                <p><strong>Challenge:</strong> Run out of money or time, and you can't make more pizzas that day!</p>
+            </div>
+            <button onclick="hideInstructions()" class="mt-6 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold">
+                Got it! Let's Play
+            </button>
+        </div>
+    </div>
+
+    <!-- Feedback Message -->
+    <div id="feedbackMessage" class="feedback-message bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
+        <span id="feedbackText"></span>
+    </div>
+
+    <script>
+        // Game State
+        let gameState = {
+            day: 1,
+            money: 100,
+            timeLeft: 480, // minutes (8 hours)
+            satisfaction: 100,
+            selectedIngredients: [],
+            pizzasMade: 0,
+            todayRevenue: 0,
+            todayExpenses: 0,
+            dailyStats: []
+        };
+
+        // Ingredient data
+        const ingredients = {
+            cheese: { emoji: '🧀', name: 'Cheese', cost: 2, time: 5 },
+            pepperoni: { emoji: '🍕', name: 'Pepperoni', cost: 3, time: 3 },
+            mushrooms: { emoji: '🍄', name: 'Mushrooms', cost: 2, time: 4 },
+            peppers: { emoji: '🌶️', name: 'Peppers', cost: 1, time: 3 },
+            olives: { emoji: '🫒', name: 'Olives', cost: 2, time: 2 },
+            onions: { emoji: '🧅', name: 'Onions', cost: 1, time: 3 }
+        };
+
+        // Customer feedback templates
+        const customerFeedback = [
+            { text: "Delicious! I'll definitely come back!", rating: "⭐⭐⭐⭐⭐", bonus: 5 },
+            { text: "Great pizza, but could use more toppings.", rating: "⭐⭐⭐⭐", bonus: 2 },
+            { text: "Good effort, but I've had better.", rating: "⭐⭐⭐", bonus: 0 },
+            { text: "Too many toppings, overwhelming!", rating: "⭐⭐", bonus: -2 },
+            { text: "Bland pizza, needs more flavor.", rating: "⭐", bonus: -5 }
+        ];
+
+        // Initialize game
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDisplay();
+            setupIngredientSelection();
+            initializeChart();
+            showInstructions();
+        });
+
+        function setupIngredientSelection() {
+            const ingredientItems = document.querySelectorAll('.ingredient-item');
+            ingredientItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const ingredient = this.dataset.ingredient;
+                    toggleIngredient(ingredient, this);
+                });
+            });
+        }
+
+        function toggleIngredient(ingredient, element) {
+            if (gameState.selectedIngredients.includes(ingredient)) {
+                // Remove ingredient
+                gameState.selectedIngredients = gameState.selectedIngredients.filter(i => i !== ingredient);
+                element.classList.remove('selected');
+            } else {
+                // Add ingredient
+                gameState.selectedIngredients.push(ingredient);
+                element.classList.add('selected');
+            }
+            updateIngredientDisplay();
+            updatePizzaPreview();
+        }
+
+        function updateIngredientDisplay() {
+            const count = gameState.selectedIngredients.length;
+            const totalCost = gameState.selectedIngredients.reduce((sum, ing) => sum + ingredients[ing].cost, 0);
+            const totalTime = gameState.selectedIngredients.reduce((sum, ing) => sum + ingredients[ing].time, 5); // Base 5 min for dough
+
+            document.getElementById('ingredientCount').textContent = count;
+            document.getElementById('totalCost').textContent = totalCost;
+            document.getElementById('totalTime').textContent = totalTime;
+
+            // Enable/disable make pizza button
+            const makeBtn = document.getElementById('makePizzaBtn');
+            const canAfford = totalCost <= gameState.money;
+            const hasTime = totalTime <= gameState.timeLeft;
+            const hasIngredients = count > 0;
+
+            makeBtn.disabled = !(canAfford && hasTime && hasIngredients);
+            
+            if (!hasIngredients) {
+                makeBtn.textContent = '🍕 Select Ingredients First';
+            } else if (!canAfford) {
+                makeBtn.textContent = '💰 Not Enough Money';
+            } else if (!hasTime) {
+                makeBtn.textContent = '⏰ Not Enough Time';
+            } else {
+                makeBtn.textContent = `🍕 Make Pizza - Earn $${15 + count * 2}`;
+            }
+        }
+
+        function updatePizzaPreview() {
+            const toppingsContainer = document.getElementById('pizzaToppings');
+            toppingsContainer.innerHTML = '';
+
+            gameState.selectedIngredients.forEach((ingredient, index) => {
+                const topping = document.createElement('div');
+                topping.className = 'topping';
+                topping.style.cssText = `
+                    width: 20px;
+                    height: 20px;
+                    background: #f8f9fa;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 12px;
+                    left: ${20 + (index % 3) * 25 + Math.random() * 10}px;
+                    top: ${20 + Math.floor(index / 3) * 25 + Math.random() * 10}px;
+                `;
+                topping.textContent = ingredients[ingredient].emoji;
+                toppingsContainer.appendChild(topping);
+            });
+        }
+
+        function makePizza() {
+            const totalCost = gameState.selectedIngredients.reduce((sum, ing) => sum + ingredients[ing].cost, 0);
+            const totalTime = gameState.selectedIngredients.reduce((sum, ing) => sum + ingredients[ing].time, 5);
+            const revenue = 15 + gameState.selectedIngredients.length * 2;
+
+            // Update game state
+            gameState.money -= totalCost;
+            gameState.timeLeft -= totalTime;
+            gameState.pizzasMade++;
+            gameState.todayRevenue += revenue;
+            gameState.todayExpenses += totalCost;
+
+            // Show customer feedback
+            showCustomerFeedback();
+
+            // Reset ingredients
+            gameState.selectedIngredients = [];
+            document.querySelectorAll('.ingredient-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+
+            updateDisplay();
+            updatePizzaPreview();
+            updateChart();
+
+            // Show success feedback
+            showFeedback(`🍕 Pizza made! +$${revenue - totalCost} profit`);
+        }
+
+        function showCustomerFeedback() {
+            const feedback = customerFeedback[Math.floor(Math.random() * customerFeedback.length)];
+            const feedbackElement = document.getElementById('customerFeedback');
+            const feedbackText = document.getElementById('feedbackText');
+            const feedbackRating = document.getElementById('feedbackRating');
+
+            feedbackText.textContent = feedback.text;
+            feedbackRating.textContent = feedback.rating;
+            feedbackElement.classList.remove('hidden');
+
+            // Apply bonus/penalty to satisfaction
+            gameState.satisfaction = Math.max(0, Math.min(100, gameState.satisfaction + feedback.bonus));
+        }
+
+        function endDay() {
+            // Calculate daily profit
+            const dailyProfit = gameState.todayRevenue - gameState.todayExpenses;
+            
+            // Store daily stats
+            gameState.dailyStats.push({
+                day: gameState.day,
+                profit: dailyProfit,
+                pizzas: gameState.pizzasMade,
+                satisfaction: gameState.satisfaction
+            });
+
+            // Reset for next day
+            gameState.day++;
+            gameState.timeLeft = 480; // 8 hours
+            gameState.pizzasMade = 0;
+            gameState.todayRevenue = 0;
+            gameState.todayExpenses = 0;
+            gameState.selectedIngredients = [];
+
+            // Clear ingredient selection
+            document.querySelectorAll('.ingredient-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+
+            // Hide customer feedback
+            document.getElementById('customerFeedback').classList.add('hidden');
+
+            // Check if game is over
+            if (gameState.day > 7) {
+                endGame();
+            } else {
+                updateDisplay();
+                updatePizzaPreview();
+                updateChart();
+                showFeedback(`🌅 Day ${gameState.day - 1} complete! Profit: $${dailyProfit}`);
+            }
+        }
+
+        function endGame() {
+            const totalProfit = gameState.dailyStats.reduce((sum, day) => sum + day.profit, 0);
+            const averageSatisfaction = gameState.dailyStats.reduce((sum, day) => sum + day.satisfaction, 0) / gameState.dailyStats.length;
+            const totalPizzas = gameState.dailyStats.reduce((sum, day) => sum + day.pizzas, 0);
+
+            let message = `🎉 Game Over! Final Results:\n\n`;
+            message += `💰 Total Profit: $${totalProfit}\n`;
+            message += `🍕 Total Pizzas Made: ${totalPizzas}\n`;
+            message += `😊 Average Customer Satisfaction: ${Math.round(averageSatisfaction)}%\n\n`;
+            
+            if (totalProfit > 200) {
+                message += "🏆 Pizza Master! You're a natural entrepreneur!";
+            } else if (totalProfit > 100) {
+                message += "👍 Good job! You understand the basics of business!";
+            } else if (totalProfit > 0) {
+                message += "💪 Not bad for your first try! Keep practicing!";
+            } else {
+                message += "🤔 Hmm, maybe rethink your strategy next time!";
+            }
+
+            alert(message);
+            
+            // Redirect to home page
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 2000);
+        }
+
+        function updateDisplay() {
+            document.getElementById('currentDay').textContent = gameState.day;
+            document.getElementById('moneyDisplay').textContent = `$${gameState.money}`;
+            document.getElementById('timeDisplay').textContent = `${Math.floor(gameState.timeLeft / 60)}h ${gameState.timeLeft % 60}m`;
+            document.getElementById('satisfactionDisplay').textContent = `${gameState.satisfaction}%`;
+            document.getElementById('pizzasMade').textContent = gameState.pizzasMade;
+            document.getElementById('todayRevenue').textContent = gameState.todayRevenue;
+            document.getElementById('todayExpenses').textContent = gameState.todayExpenses;
+
+            // Update progress bars
+            document.getElementById('moneyBar').style.width = `${Math.min(100, (gameState.money / 200) * 100)}%`;
+            document.getElementById('timeBar').style.width = `${(gameState.timeLeft / 480) * 100}%`;
+            document.getElementById('satisfactionBar').style.width = `${gameState.satisfaction}%`;
+
+            updateIngredientDisplay();
+        }
+
+        function initializeChart() {
+            const chartDom = document.getElementById('progressChart');
+            const myChart = echarts.init(chartDom);
+            
+            const option = {
+                title: {
+                    text: 'Daily Profit Tracker',
+                    textStyle: { color: '#2C3E50' }
+                },
+                tooltip: {
+                    trigger: 'axis'
+                },
+                legend: {
+                    data: ['Profit', 'Pizzas Made', 'Customer Satisfaction']
+                },
+                xAxis: {
+                    type: 'category',
+                    data: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7']
+                },
+                yAxis: [
+                    {
+                        type: 'value',
+                        name: 'Profit ($)',
+                        position: 'left'
+                    },
+                    {
+                        type: 'value',
+                        name: 'Count/Percentage',
+                        position: 'right'
+                    }
+                ],
+                series: [
+                    {
+                        name: 'Profit',
+                        type: 'bar',
+                        data: [],
+                        itemStyle: { color: '#FF6B6B' }
+                    },
+                    {
+                        name: 'Pizzas Made',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [],
+                        itemStyle: { color: '#4ECDC4' }
+                    },
+                    {
+                        name: 'Customer Satisfaction',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [],
+                        itemStyle: { color: '#FFE66D' }
+                    }
+                ]
+            };
+            
+            myChart.setOption(option);
+            window.progressChart = myChart;
+        }
+
+        function updateChart() {
+            if (window.progressChart) {
+                const profits = gameState.dailyStats.map(day => day.profit);
+                const pizzas = gameState.dailyStats.map(day => day.pizzas);
+                const satisfaction = gameState.dailyStats.map(day => day.satisfaction);
+                
+                window.progressChart.setOption({
+                    series: [
+                        { data: profits },
+                        { data: pizzas },
+                        { data: satisfaction }
+                    ]
+                });
+            }
+        }
+
+        function showFeedback(message) {
+            const feedbackElement = document.getElementById('feedbackMessage');
+            const feedbackText = document.getElementById('feedbackText');
+            
+            feedbackText.textContent = message;
+            feedbackElement.classList.add('show');
+            
+            setTimeout(() => {
+                feedbackElement.classList.remove('show');
+            }, 3000);
+        }
+
+        function showInstructions() {
+            document.getElementById('instructionsModal').classList.remove('hidden');
+        }
+
+        function hideInstructions() {
+            document.getElementById('instructionsModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

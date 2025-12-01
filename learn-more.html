@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learn More - Scarcity Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://unpkg.com/splide@4.1.4/dist/js/splide.min.js"></script>
+    <link href="https://unpkg.com/splide@4.1.4/dist/css/splide.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Inter:wght@400;500;600&family=Fredoka+One&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF6B6B;
+            --secondary: #4ECDC4;
+            --accent: #FFE66D;
+            --dark: #2C3E50;
+            --light: #FEFEFE;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .page-title {
+            font-family: 'Fredoka One', cursive;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .content-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .content-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .concept-highlight {
+            background: linear-gradient(45deg, var(--accent), var(--primary));
+            color: var(--dark);
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.875rem;
+        }
+        
+        .example-box {
+            background: rgba(78, 205, 196, 0.1);
+            border-left: 4px solid var(--secondary);
+            padding: 16px;
+            margin: 16px 0;
+            border-radius: 8px;
+        }
+        
+        .discussion-question {
+            background: rgba(255, 230, 109, 0.1);
+            border-left: 4px solid var(--accent);
+            padding: 16px;
+            margin: 16px 0;
+            border-radius: 8px;
+        }
+        
+        .floating-shape {
+            position: absolute;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            opacity: 0.1;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+    <!-- Floating Background Shapes -->
+    <div class="floating-shape w-32 h-32 top-20 left-10" style="animation-delay: 0s;"></div>
+    <div class="floating-shape w-24 h-24 top-40 right-20" style="animation-delay: 2s;"></div>
+    <div class="floating-shape w-40 h-40 bottom-32 left-1/4" style="animation-delay: 4s;"></div>
+
+    <!-- Navigation -->
+    <nav class="relative z-50 p-6">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="text-white text-2xl font-bold">📚 Learn More</div>
+            <div class="hidden md:flex space-x-6">
+                <a href="index.html" class="text-white hover:text-yellow-300 transition-colors">Home</a>
+                <a href="#concepts" class="text-white hover:text-yellow-300 transition-colors">Key Concepts</a>
+                <a href="#examples" class="text-white hover:text-yellow-300 transition-colors">Real Examples</a>
+                <a href="#discussion" class="text-white hover:text-yellow-300 transition-colors">Discussion</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header Section -->
+    <section class="relative z-10 pt-20 pb-16 px-6">
+        <div class="max-w-4xl mx-auto text-center">
+            <h1 class="page-title text-5xl md:text-7xl font-bold mb-8">Understanding Scarcity</h1>
+            <p class="text-xl md:text-2xl text-white mb-8 leading-relaxed">
+                Dive deeper into the fascinating world of economics and discover how scarcity shapes every decision we make.
+            </p>
+        </div>
+    </section>
+
+    <!-- Key Concepts Section -->
+    <section id="concepts" class="relative z-10 py-20 px-6 bg-white bg-opacity-95">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-16 text-gray-800">Key Economic Concepts</h2>
+            
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Scarcity -->
+                <div class="content-card rounded-2xl p-8">
+                    <div class="text-5xl mb-4">💎</div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-800">Scarcity</h3>
+                    <p class="text-gray-600 mb-4 leading-relaxed">
+                        The fundamental economic problem: human wants are unlimited, but resources are limited. This forces us to make choices about how to use our limited resources.
+                    </p>
+                    <div class="concept-highlight inline-block">Core Concept</div>
+                </div>
+
+                <!-- Opportunity Cost -->
+                <div class="content-card rounded-2xl p-8">
+                    <div class="text-5xl mb-4">🔄</div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-800">Opportunity Cost</h3>
+                    <p class="text-gray-600 mb-4 leading-relaxed">
+                        The value of the next best alternative you give up when making a choice. Every decision has a cost, even if you don't pay money for it.
+                    </p>
+                    <div class="concept-highlight inline-block">Key Principle</div>
+                </div>
+
+                <!-- Trade-offs -->
+                <div class="content-card rounded-2xl p-8">
+                    <div class="text-5xl mb-4">⚖️</div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-800">Trade-offs</h3>
+                    <p class="text-gray-600 mb-4 leading-relaxed">
+                        The alternatives we give up when we make choices. Because of scarcity, we can't have everything, so we must trade one thing for another.
+                    </p>
+                    <div class="concept-highlight inline-block">Decision Making</div>
+                </div>
+
+                <!-- Resource Allocation -->
+                <div class="content-card rounded-2xl p-8">
+                    <div class="text-5xl mb-4">📊</div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-800">Resource Allocation</h3>
+                    <p class="text-gray-600 mb-4 leading-relaxed">
+                        How societies decide to use their limited resources to produce goods and services. This includes what to produce, how to produce it, and for whom.
+                    </p>
+                    <div class="concept-highlight inline-block">Social Organization</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Real Examples Section -->
+    <section id="examples" class="relative z-10 py-20 px-6">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-16 text-white">Real-World Examples</h2>
+            
+            <div class="space-y-8">
+                <!-- Time Scarcity Example -->
+                <div class="content-card rounded-2xl p-8">
+                    <div class="flex items-start space-x-6">
+                        <div class="text-6xl">⏰</div>
+                        <div class="flex-1">
+                            <h3 class="text-2xl font-bold mb-4 text-gray-800">Time Scarcity in Daily Life</h3>
+                            <div class="example-box">
+                                <p class="font-semibold text-gray-700 mb-2">Example: The 24-Hour Day</p>
+                                <p class="text-gray-600 mb-4">
+                                    You have 24 hours each day. If you spend 8 hours sleeping, 7 hours at school, and 2 hours on homework, you have 7 hours left. Choosing to play video games for 3 hours means you can't use that time for sports, socializing, or other activities.
+                                </p>
+                                <p class="text-gray-600">
+                                    <strong>Opportunity Cost:</strong> The 3 hours of gaming cost you the chance to do other activities during that time.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Money Scarcity Example -->
+                <div class="content-card rounded-2xl p-8">
+                    <div class="flex items-start space-x-6">
+                        <div class="text-6xl">💰</div>
+                        <div class="flex-1">
+                            <h3 class="text-2xl font-bold mb-4 text-gray-800">Money Scarcity and Budgeting</h3>
+                            <div class="example-box">
+                                <p class="font-semibold text-gray-700 mb-2">Example: Weekly Allowance</p>
+                                <p class="text-gray-600 mb-4">
+                                    With $50 weekly allowance, you might want to buy a $30 video game, $20 worth of snacks, $15 movie tickets, and save $25. But $30 + $20 + $15 + $25 = $90, which is more than your $50 budget.
+                                </p>
+                                <p class="text-gray-600">
+                                    <strong>Trade-off:</strong> You must choose which items are most important and give up others, or find ways to earn more money.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resource Scarcity Example -->
+                <div class="content-card rounded-2xl p-8">
+                    <div class="flex items-start space-x-6">
+                        <div class="text-6xl">🌍</div>
+                        <div class="flex-1">
+                            <h3 class="text-2xl font-bold mb-4 text-gray-800">Natural Resource Scarcity</h3>
+                            <div class="example-box">
+                                <p class="font-semibold text-gray-700 mb-2">Example: Water Crisis</p>
+                                <p class="text-gray-600 mb-4">
+                                    Many regions face water scarcity. California, for example, must decide how to allocate limited water between agriculture (growing food), urban use (drinking, bathing), and environmental protection (keeping rivers and lakes healthy).
+                                </p>
+                                <p class="text-gray-600">
+                                    <strong>Resource Allocation:</strong> Society must choose how to distribute limited water resources among competing needs.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Historical Example -->
+                <div class="content-card rounded-2xl p-8">
+                    <div class="flex items-start space-x-6">
+                        <div class="text-6xl">🚢</div>
+                        <div class="flex-1">
+                            <h3 class="text-2xl font-bold mb-4 text-gray-800">Historical Example: The Mayflower</h3>
+                            <div class="example-box">
+                                <p class="font-semibold text-gray-700 mb-2">Pilgrims' Resource Management</p>
+                                <p class="text-gray-600 mb-4">
+                                    When the Pilgrims arrived in America, they faced extreme scarcity. Limited food, tools, and shelter meant every decision was critical. They had to choose between building shelter immediately or planting crops for future food.
+                                </p>
+                                <p class="text-gray-600">
+                                    <strong>Lesson:</strong> Their survival depended on smart resource allocation and understanding trade-offs between immediate needs and long-term goals.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Discussion Questions Section -->
+    <section id="discussion" class="relative z-10 py-20 px-6 bg-white bg-opacity-95">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-16 text-gray-800">Discussion Questions</h2>
+            
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="discussion-question">
+                    <h3 class="text-xl font-bold mb-3 text-gray-800">Personal Experience</h3>
+                    <p class="text-gray-600 mb-4">
+                        Think about your own life. What's the biggest trade-off you've had to make recently? What did you give up, and what did you gain?
+                    </p>
+                    <div class="text-sm text-gray-500">
+                        💡 Example: Choosing between studying for a test vs. going to a friend's party
+                    </div>
+                </div>
+
+                <div class="discussion-question">
+                    <h3 class="text-xl font-bold mb-3 text-gray-800">Society's Choices</h3>
+                    <p class="text-gray-600 mb-4">
+                        If you were in charge of your city's budget, how would you allocate money between schools, parks, roads, and public safety?
+                    </p>
+                    <div class="text-sm text-gray-500">
+                        💡 Consider: What happens if you spend too much on one area?
+                    </div>
+                </div>
+
+                <div class="discussion-question">
+                    <h3 class="text-xl font-bold mb-3 text-gray-800">Future Planning</h3>
+                    <p class="text-gray-600 mb-4">
+                        How does understanding scarcity help you make better decisions about your future education and career choices?
+                    </p>
+                    <div class="text-sm text-gray-500">
+                        💡 Think about: Time investment, financial costs, and opportunity costs
+                    </div>
+                </div>
+
+                <div class="discussion-question">
+                    <h3 class="text-xl font-bold mb-3 text-gray-800">Global Perspective</h3>
+                    <p class="text-gray-600 mb-4">
+                        How might scarcity affect people differently in various parts of the world? What resources are scarce where you live vs. other places?
+                    </p>
+                    <div class="text-sm text-gray-500">
+                        💡 Compare: Water scarcity in deserts vs. food scarcity in cities
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Additional Resources Section -->
+    <section class="relative z-10 py-20 px-6">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-16 text-white">Explore Further</h2>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="content-card rounded-2xl p-8 text-center">
+                    <div class="text-5xl mb-4">📖</div>
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">Books to Read</h3>
+                    <ul class="text-gray-600 space-y-2 text-sm">
+                        <li>"Freakonomics" by Steven Levitt</li>
+                        <li>"The Economics Book" by DK Publishing</li>
+                        <li>"Naked Economics" by Charles Wheelan</li>
+                    </ul>
+                </div>
+
+                <div class="content-card rounded-2xl p-8 text-center">
+                    <div class="text-5xl mb-4">🎥</div>
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">Videos to Watch</h3>
+                    <ul class="text-gray-600 space-y-2 text-sm">
+                        <li>Crash Course Economics</li>
+                        <li>Khan Academy Economics</li>
+                        <li>TED-Ed Economic Concepts</li>
+                    </ul>
+                </div>
+
+                <div class="content-card rounded-2xl p-8 text-center">
+                    <div class="text-5xl mb-4">🌐</div>
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">Websites to Visit</h3>
+                    <ul class="text-gray-600 space-y-2 text-sm">
+                        <li>Federal Reserve Education</li>
+                        <li>EconEdLink</li>
+                        <li>St. Louis Fed Resources</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="relative z-10 py-20 px-6 bg-white bg-opacity-95">
+        <div class="max-w-4xl mx-auto text-center">
+            <h2 class="text-4xl font-bold mb-8 text-gray-800">Ready to Test Your Knowledge?</h2>
+            <p class="text-xl text-gray-600 mb-8">
+                Apply what you've learned by trying our interactive simulations again with your new understanding!
+            </p>
+            <div class="flex flex-col sm:flex-row gap-6 justify-center">
+                <a href="index.html" class="bg-gradient-to-r from-red-500 to-teal-400 text-white px-8 py-4 rounded-full text-lg font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105">
+                    🎮 Play Simulations
+                </a>
+                <button onclick="window.print()" class="bg-gray-500 hover:bg-gray-600 text-white px-8 py-4 rounded-full text-lg font-semibold transition-colors">
+                    🖨️ Print This Page
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="relative z-10 py-12 px-6 bg-gray-900 text-white text-center">
+        <div class="max-w-4xl mx-auto">
+            <p class="text-lg mb-4">🎓 Keep Learning and Exploring Economics!</p>
+            <p class="text-gray-400">© 2024 Scarcity Simulator - Educational Resource</p>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize animations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate content cards on scroll
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all content cards
+            document.querySelectorAll('.content-card, .discussion-question').forEach(card => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(30px)';
+                card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                observer.observe(card);
+            });
+
+            // Smooth scrolling for navigation links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        });
+
+        // Add interactive hover effects
+        document.querySelectorAll('.content-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-8px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>

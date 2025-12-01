@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Economic Analysis Simulator - Understanding Human Choices</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Inter:wght@400;500;600&family=Fredoka+One&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF6B6B;
+            --secondary: #4ECDC4;
+            --accent: #FFE66D;
+            --dark: #2C3E50;
+            --light: #FEFEFE;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .sim-title {
+            font-family: 'Fredoka One', cursive;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .scenario-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .scenario-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .concept-tag {
+            background: linear-gradient(45deg, var(--accent), var(--primary));
+            color: var(--dark);
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.75rem;
+            display: inline-block;
+            margin: 2px;
+        }
+        
+        .question-card {
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .answer-option {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #e5e7eb;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .answer-option:hover {
+            border-color: var(--primary);
+            background: rgba(255, 107, 107, 0.1);
+        }
+        
+        .answer-option.selected {
+            border-color: var(--secondary);
+            background: rgba(78, 205, 196, 0.1);
+        }
+        
+        .answer-option.correct {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+        
+        .answer-option.incorrect {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+        
+        .feedback-card {
+            background: rgba(78, 205, 196, 0.1);
+            border-left: 4px solid var(--secondary);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            height: 8px;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .level-indicator {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+    <!-- Navigation -->
+    <nav class="relative z-50 p-6">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="text-white text-2xl font-bold">🧠 Economic Analysis Simulator</div>
+            <div class="flex items-center space-x-4">
+                <div class="text-white text-sm">Progress: <span id="overallProgress" class="font-bold">0%</span></div>
+                <button onclick="resetSimulation()" class="text-white hover:text-yellow-300 transition-colors text-sm">🔄 Reset</button>
+                <button onclick="showInstructions()" class="text-white hover:text-yellow-300 transition-colors text-sm">❓ Help</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header Section -->
+    <section class="relative z-10 pt-20 pb-16 px-6">
+        <div class="max-w-4xl mx-auto text-center">
+            <h1 class="sim-title text-5xl md:text-7xl font-bold mb-8">Understanding Human Choices</h1>
+            <p class="text-xl md:text-2xl text-white mb-8 leading-relaxed">
+                Learn to analyze real-world decisions using economic concepts. Explore how individuals, families, communities, and governments make choices when faced with scarcity.
+            </p>
+            <div class="level-indicator inline-block mb-6">
+                Level: <span id="currentLevel">Individual Analysis</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Area -->
+    <section class="relative z-10 pb-20 px-6">
+        <div class="max-w-6xl mx-auto">
+            
+            <!-- Welcome Screen -->
+            <div id="welcomeScreen" class="scenario-card rounded-2xl p-8 text-center mb-8">
+                <div class="text-6xl mb-6">🎯</div>
+                <h2 class="text-3xl font-bold mb-6 text-gray-800">Ready to Analyze Real Choices?</h2>
+                <p class="text-lg text-gray-600 mb-8 leading-relaxed">
+                    You'll explore four scenarios, each focusing on different levels of decision-making. 
+                    For each scenario, you'll answer questions that help you apply economic concepts to understand why people make the choices they do.
+                </p>
+                <div class="grid md:grid-cols-4 gap-4 mb-8">
+                    <div class="text-center">
+                        <div class="text-3xl mb-2">👤</div>
+                        <div class="font-semibold">Individual</div>
+                        <div class="text-sm text-gray-600">Personal decisions</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl mb-2">👨‍👩‍👧‍👦</div>
+                        <div class="font-semibold">Family</div>
+                        <div class="text-sm text-gray-600">Household choices</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl mb-2">🏘️</div>
+                        <div class="font-semibold">Community</div>
+                        <div class="text-sm text-gray-600">Local decisions</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl mb-2">🏛️</div>
+                        <div class="font-semibold">Government</div>
+                        <div class="text-sm text-gray-600">Societal choices</div>
+                    </div>
+                </div>
+                <button onclick="startSimulation()" class="bg-gradient-to-r from-red-500 to-teal-400 text-white px-8 py-4 rounded-full text-lg font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105">
+                    🚀 Start Analysis
+                </button>
+            </div>
+
+            <!-- Scenario Container -->
+            <div id="scenarioContainer" class="hidden">
+                
+                <!-- Individual Scenario -->
+                <div id="individualScenario" class="scenario-card rounded-2xl p-8 mb-8">
+                    <div class="flex items-center mb-6">
+                        <div class="text-4xl mr-4">👤</div>
+                        <div>
+                            <h2 class="text-3xl font-bold text-gray-800">Scenario 1: Individual Decision</h2>
+                            <p class="text-gray-600">Analyzing personal choices and trade-offs</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 rounded-lg p-6 mb-6">
+                        <h3 class="text-xl font-bold mb-3 text-gray-800">Meet Alex: The High School Student</h3>
+                        <p class="text-gray-600 leading-relaxed mb-4">
+                            Alex is a 16-year-old student with a part-time job earning $120 per week. He has a big math test on Friday, but his friends are planning to go to the movies on Thursday night. He needs to pay his phone bill ($40) and wants to buy new running shoes for track season ($80).
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="concept-tag">Needs vs Wants</span>
+                            <span class="concept-tag">Opportunity Cost</span>
+                            <span class="concept-tag">Trade-offs</span>
+                            <span class="concept-tag">Scarcity</span>
+                        </div>
+                    </div>
+
+                    <div id="individualQuestions">
+                        <!-- Questions will be populated by JavaScript -->
+                    </div>
+
+                    <div class="flex justify-between items-center mt-6">
+                        <div class="text-sm text-gray-500">
+                            Progress: <span id="individualProgress">0/4 questions</span>
+                        </div>
+                        <button id="individualNextBtn" onclick="nextScenario('family')" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors hidden">
+                            Next: Family Analysis →
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Family Scenario -->
+                <div id="familyScenario" class="scenario-card rounded-2xl p-8 mb-8 hidden">
+                    <div class="flex items-center mb-6">
+                        <div class="text-4xl mr-4">👨‍👩‍👧‍👦</div>
+                        <div>
+                            <h2 class="text-3xl font-bold text-gray-800">Scenario 2: Family Decision</h2>
+                            <p class="text-gray-600">Understanding household resource allocation</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-green-50 rounded-lg p-6 mb-6">
+                        <h3 class="text-xl font-bold mb-3 text-gray-800">The Johnson Family Budget</h3>
+                        <p class="text-gray-600 leading-relaxed mb-4">
+                            The Johnson family has a monthly income of $4,500. They must pay for basic needs: housing ($1,800), food ($600), transportation ($400), and utilities ($300). They also have credit card debt to pay off and want to save for their children's college education, while considering optional expenses like family vacation and dining out.
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="concept-tag">Resource Allocation</span>
+                            <span class="concept-tag">Prioritization</span>
+                            <span class="concept-tag">Long-term Planning</span>
+                            <span class="concept-tag">Budget Constraints</span>
+                        </div>
+                    </div>
+
+                    <div id="familyQuestions">
+                        <!-- Questions will be populated by JavaScript -->
+                    </div>
+
+                    <div class="flex justify-between items-center mt-6">
+                        <div class="text-sm text-gray-500">
+                            Progress: <span id="familyProgress">0/4 questions</span>
+                        </div>
+                        <button id="familyNextBtn" onclick="nextScenario('community')" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors hidden">
+                            Next: Community Analysis →
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Community Scenario -->
+                <div id="communityScenario" class="scenario-card rounded-2xl p-8 mb-8 hidden">
+                    <div class="flex items-center mb-6">
+                        <div class="text-4xl mr-4">🏘️</div>
+                        <div>
+                            <h2 class="text-3xl font-bold text-gray-800">Scenario 3: Community Decision</h2>
+                            <p class="text-gray-600">Exploring local government and community choices</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-yellow-50 rounded-lg p-6 mb-6">
+                        <h3 class="text-xl font-bold mb-3 text-gray-800">Riverside Community Development</h3>
+                        <p class="text-gray-600 leading-relaxed mb-4">
+                            Riverside has a $2 million budget for community improvements. They must choose between building a new library ($800,000), improving the park system ($600,000), upgrading roads ($900,000), or supporting local businesses ($500,000). The community has different opinions about priorities.
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="concept-tag">Public Goods</span>
+                            <span class="concept-tag">Collective Choice</span>
+                            <span class="concept-tag">Stakeholder Interests</span>
+                            <span class="concept-tag">Opportunity Cost</span>
+                        </div>
+                    </div>
+
+                    <div id="communityQuestions">
+                        <!-- Questions will be populated by JavaScript -->
+                    </div>
+
+                    <div class="flex justify-between items-center mt-6">
+                        <div class="text-sm text-gray-500">
+                            Progress: <span id="communityProgress">0/4 questions</span>
+                        </div>
+                        <button id="communityNextBtn" onclick="nextScenario('government')" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors hidden">
+                            Next: Government Analysis →
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Government Scenario -->
+                <div id="governmentScenario" class="scenario-card rounded-2xl p-8 mb-8 hidden">
+                    <div class="flex items-center mb-6">
+                        <div class="text-4xl mr-4">🏛️</div>
+                        <div>
+                            <h2 class="text-3xl font-bold text-gray-800">Scenario 4: Government Decision</h2>
+                            <p class="text-gray-600">Understanding national policy and resource allocation</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-purple-50 rounded-lg p-6 mb-6">
+                        <h3 class="text-xl font-bold mb-3 text-gray-800">National Budget Priorities</h3>
+                        <p class="text-gray-600 leading-relaxed mb-4">
+                            The federal government has $4 trillion to allocate. They must balance defense spending, healthcare programs, education funding, infrastructure improvements, and environmental protection. Each area has advocates claiming it's the most important priority for the nation's future.
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="concept-tag">Macroeconomics</span>
+                            <span class="concept-tag">Policy Trade-offs</span>
+                            <span class="concept-tag">Public Interest</span>
+                            <span class="concept-tag">Resource Scarcity</span>
+                        </div>
+                    </div>
+
+                    <div id="governmentQuestions">
+                        <!-- Questions will be populated by JavaScript -->
+                    </div>
+
+                    <div class="flex justify-between items-center mt-6">
+                        <div class="text-sm text-gray-500">
+                            Progress: <span id="governmentProgress">0/4 questions</span>
+                        </div>
+                        <button id="governmentNextBtn" onclick="showResults()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors hidden">
+                            🎉 View Results
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Screen -->
+            <div id="resultsScreen" class="scenario-card rounded-2xl p-8 text-center hidden">
+                <div class="text-6xl mb-6">🎉</div>
+                <h2 class="text-3xl font-bold mb-6 text-gray-800">Analysis Complete!</h2>
+                <div id="resultsContent">
+                    <!-- Results will be populated by JavaScript -->
+                </div>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+                    <button onclick="resetSimulation()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+                        🔄 Try Again
+                    </button>
+                    <a href="index.html" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+                        🏠 Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Instructions Modal -->
+    <div id="instructionsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-6">
+        <div class="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-96 overflow-y-auto">
+            <h2 class="text-3xl font-bold mb-6 text-gray-800">🧠 How to Use This Simulator</h2>
+            <div class="space-y-4 text-gray-600">
+                <p><strong>Goal:</strong> Analyze real-world scenarios using economic concepts to understand human decision-making!</p>
+                <p><strong>How it Works:</strong> Read each scenario carefully and answer questions about the economic concepts at play.</p>
+                <p><strong>Concepts You'll Use:</strong> Needs vs. Wants, Scarcity, Trade-offs, Opportunity Cost, Resource Allocation</p>
+                <p><strong>Learning Approach:</strong> Think critically about why people make certain choices and what they give up in the process.</p>
+                <p><strong>Feedback:</strong> You'll get explanations for both correct and incorrect answers to deepen your understanding.</p>
+            </div>
+            <button onclick="hideInstructions()" class="mt-6 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold">
+                Got it! Let's Analyze
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let gameState = {
+            currentScenario: 'individual',
+            individualProgress: 0,
+            familyProgress: 0,
+            communityProgress: 0,
+            governmentProgress: 0,
+            totalCorrect: 0,
+            totalQuestions: 16,
+            conceptsMastered: new Set()
+        };
+
+        // Question data for each scenario
+        const scenarioQuestions = {
+            individual: [
+                {
+                    question: "What is Alex's actual NEED in this situation?",
+                    options: [
+                        "Going to the movies with friends",
+                        "Paying his phone bill",
+                        "Buying new running shoes",
+                        "Getting a good grade on the math test"
+                    ],
+                    correct: 1,
+                    explanation: "Paying his phone bill is a need because it's an essential service he must maintain. The test preparation is important but not a basic need, and the other options are wants.",
+                    concepts: ["Needs vs Wants"]
+                },
+                {
+                    question: "What is the opportunity cost if Alex chooses to buy the running shoes instead of paying his phone bill?",
+                    options: [
+                        "The $80 spent on shoes",
+                        "The ability to communicate with others",
+                        "The chance to participate in track season",
+                        "The time spent shopping"
+                    ],
+                    correct: 1,
+                    explanation: "The opportunity cost is losing his phone service - a crucial communication tool. This could affect his safety, job, and social connections.",
+                    concepts: ["Opportunity Cost"]
+                },
+                {
+                    question: "Which choice best demonstrates understanding of scarcity and prioritization?",
+                    options: [
+                        "Buying shoes and going to movies but not paying the phone bill",
+                        "Paying the phone bill, then deciding between the test and track shoes",
+                        "Only focusing on the math test and ignoring everything else",
+                        "Trying to do everything with his limited money"
+                    ],
+                    correct: 1,
+                    explanation: "This shows Alex understands scarcity - he can't afford everything, so he prioritizes the need (phone bill) first, then makes choices about the wants.",
+                    concepts: ["Scarcity", "Trade-offs", "Prioritization"]
+                },
+                {
+                    question: "How does Alex's limited money ($120/week) create scarcity?",
+                    options: [
+                        "He can't buy everything he wants",
+                        "He has to choose between different options",
+                        "He must prioritize between needs and wants",
+                        "All of the above"
+                    ],
+                    correct: 3,
+                    explanation: "All options are correct! Limited money means Alex faces scarcity, must make choices, and has to prioritize his spending between needs and wants.",
+                    concepts: ["Scarcity", "Resource Allocation"]
+                }
+            ],
+            family: [
+                {
+                    question: "Which of these are actual NEEDS for the Johnson family?",
+                    options: [
+                        "Housing, food, transportation, and utilities",
+                        "College savings and family vacation",
+                        "Dining out and entertainment",
+                        "Credit card payments and new furniture"
+                    ],
+                    correct: 0,
+                    explanation: "Housing, food, transportation, and utilities are basic needs that the family must have to survive and function. The other options are wants or financial obligations.",
+                    concepts: ["Needs vs Wants", "Budget Constraints"]
+                },
+                {
+                    question: "If the Johnsons pay for basic needs first before considering college savings, what economic principle are they following?",
+                    options: [
+                        "Opportunity cost",
+                        "Prioritization of needs over wants",
+                        "Long-term planning",
+                        "Budget maximization"
+                    ],
+                    correct: 1,
+                    explanation: "They're following the principle of meeting basic needs first before allocating money to wants or long-term goals. This is fundamental to sound financial planning.",
+                    concepts: ["Prioritization", "Needs vs Wants"]
+                },
+                {
+                    question: "What trade-off might the Johnson family face when deciding between current wants and future goals?",
+                    options: [
+                        "Taking a vacation vs. saving for college",
+                        "Eating out frequently vs. paying off debt faster",
+                        "Buying new furniture vs. building an emergency fund",
+                        "All of the above"
+                    ],
+                    correct: 3,
+                    explanation: "All families face these trade-offs between immediate gratification (wants) and long-term financial health. Each choice involves giving up something to gain something else.",
+                    concepts: ["Trade-offs", "Long-term Planning"]
+                },
+                {
+                    question: "How does understanding scarcity help families make better financial decisions?",
+                    options: [
+                        "It means they should spend all their money quickly",
+                        "It forces them to prioritize and make conscious choices about resource use",
+                        "It shows they need to earn more money",
+                        "It means they can't have any wants or luxuries"
+                    ],
+                    correct: 1,
+                    explanation: "Understanding scarcity helps families recognize they can't have everything, so they must make thoughtful choices about how to allocate their limited resources between needs and wants.",
+                    concepts: ["Scarcity", "Resource Allocation"]
+                }
+            ],
+            community: [
+                {
+                    question: "What is the main resource constraint facing Riverside community?",
+                    options: [
+                        "Lack of good ideas",
+                        "The $2 million budget limit",
+                        "Too many competing priorities",
+                        "Community disagreement"
+                    ],
+                    correct: 1,
+                    explanation: "The $2 million budget is the hard constraint that forces the community to make choices and trade-offs between different projects.",
+                    concepts: ["Budget Constraints", "Scarcity"]
+                },
+                {
+                    question: "If the community chooses to build the library, what is the opportunity cost?",
+                    options: [
+                        "The $800,000 spent on construction",
+                        "The other projects that could have been funded instead",
+                        "The time spent planning the library",
+                        "The maintenance costs of the library"
+                    ],
+                    correct: 1,
+                    explanation: "The opportunity cost is what the community gives up - the benefits from park improvements, road upgrades, or business support they could have had instead.",
+                    concepts: ["Opportunity Cost", "Public Goods"]
+                },
+                {
+                    question: "Why might different community members have different opinions about budget priorities?",
+                    options: [
+                        "They have different needs and interests",
+                        "Some people are more selfish than others",
+                        "Not everyone understands the budget constraints",
+                        "All of the above"
+                    ],
+                    correct: 3,
+                    explanation: "All factors contribute. People have different priorities, varying understanding of constraints, and personal interests that influence their preferences.",
+                    concepts: ["Stakeholder Interests", "Collective Choice"]
+                },
+                {
+                    question: "What economic concept best explains why the community can't do all four projects?",
+                    options: [
+                        "Poor planning",
+                        "Scarcity of resources",
+                        "Lack of community spirit",
+                        "Government inefficiency"
+                    ],
+                    correct: 1,
+                    explanation: "Scarcity - the community has limited resources ($2 million) but unlimited wants (all four projects). This forces them to make choices.",
+                    concepts: ["Scarcity", "Resource Allocation"]
+                }
+            ],
+            government: [
+                {
+                    question: "What is the main economic challenge facing the federal government in budget allocation?",
+                    options: [
+                        "Too many tax dollars to spend",
+                        "Unlimited demands vs. limited resources",
+                        "Lack of good programs to fund",
+                        "Public disagreement about priorities"
+                    ],
+                    correct: 1,
+                    explanation: "The government faces scarcity like everyone else - unlimited demands for spending but limited tax revenue to fund everything.",
+                    concepts: ["Scarcity", "Macroeconomics"]
+                },
+                {
+                    question: "Why might the government choose to fund education over other priorities?",
+                    options: [
+                        "Education has the highest immediate return",
+                        "It provides long-term economic benefits for society",
+                        "It's the cheapest option",
+                        "It's the most popular choice"
+                    ],
+                    correct: 1,
+                    explanation: "Education investments typically provide long-term benefits including higher productivity, innovation, and economic growth that benefit society as a whole.",
+                    concepts: ["Long-term Planning", "Public Interest"]
+                },
+                {
+                    question: "What trade-off might occur if the government increases defense spending significantly?",
+                    options: [
+                        "Less money available for social programs",
+                        "Higher taxes or increased debt",
+                        "Reduced funding for other priorities",
+                        "All of the above"
+                    ],
+                    correct: 3,
+                    explanation: "All options are correct. Increased spending in one area requires reduced spending elsewhere, higher taxes, or increased debt - all trade-offs.",
+                    concepts: ["Trade-offs", "Policy Trade-offs"]
+                },
+                {
+                    question: "How does understanding opportunity cost help governments make better policy decisions?",
+                    options: [
+                        "It helps them spend more money",
+                        "It forces them to consider what they're giving up with each choice",
+                            "It makes decisions easier",
+                        "It eliminates disagreement about priorities"
+                    ],
+                    correct: 1,
+                    explanation: "Understanding opportunity cost forces policymakers to consider the full impact of their decisions - what benefits they're giving up by choosing one policy over another.",
+                    concepts: ["Opportunity Cost", "Policy Making"]
+                }
+            ]
+        };
+
+        // Initialize the simulation
+        document.addEventListener('DOMContentLoaded', function() {
+            updateProgress();
+            showInstructions();
+        });
+
+        function startSimulation() {
+            document.getElementById('welcomeScreen').classList.add('hidden');
+            document.getElementById('scenarioContainer').classList.remove('hidden');
+            loadScenario('individual');
+        }
+
+        function loadScenario(scenario) {
+            gameState.currentScenario = scenario;
+            document.getElementById('currentLevel').textContent = getLevelName(scenario);
+            
+            // Hide all scenarios first
+            ['individual', 'family', 'community', 'government'].forEach(s => {
+                document.getElementById(s + 'Scenario').classList.add('hidden');
+            });
+            
+            // Show current scenario
+            document.getElementById(scenario + 'Scenario').classList.remove('hidden');
+            
+            // Load questions
+            loadQuestions(scenario);
+        }
+
+        function loadQuestions(scenario) {
+            const questionsContainer = document.getElementById(scenario + 'Questions');
+            const questions = scenarioQuestions[scenario];
+            
+            questionsContainer.innerHTML = questions.map((q, index) => {
+                const questionNumber = index + 1;
+                return `
+                    <div class="question-card rounded-lg p-6 mb-6" id="${scenario}Q${index}">
+                        <h4 class="text-lg font-bold mb-4 text-gray-800">Question ${questionNumber}: ${q.question}</h4>
+                        <div class="space-y-3 mb-4">
+                            ${q.options.map((option, optIndex) => `
+                                <div class="answer-option rounded-lg p-4" onclick="selectAnswer('${scenario}', ${index}, ${optIndex})">
+                                    <div class="flex items-center">
+                                        <div class="w-6 h-6 border-2 border-gray-300 rounded-full mr-3 flex items-center justify-center">
+                                            <div class="w-3 h-3 bg-transparent rounded-full"></div>
+                                        </div>
+                                        <span>${option}</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div id="${scenario}Feedback${index}" class="hidden"></div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectAnswer(scenario, questionIndex, answerIndex) {
+            const question = scenarioQuestions[scenario][questionIndex];
+            const questionElement = document.getElementById(`${scenario}Q${questionIndex}`);
+            const options = questionElement.querySelectorAll('.answer-option');
+            const feedbackElement = document.getElementById(`${scenario}Feedback${questionIndex}`);
+            
+            // Clear previous selections
+            options.forEach(opt => {
+                opt.classList.remove('selected', 'correct', 'incorrect');
+                const radio = opt.querySelector('.w-3');
+                radio.style.backgroundColor = 'transparent';
+            });
+            
+            // Mark selected answer
+            const selectedOption = options[answerIndex];
+            selectedOption.classList.add('selected');
+            const selectedRadio = selectedOption.querySelector('.w-3');
+            selectedRadio.style.backgroundColor = '#4ECDC4';
+            
+            // Check if correct
+            const isCorrect = answerIndex === question.correct;
+            
+            if (isCorrect) {
+                selectedOption.classList.add('correct');
+                gameState.totalCorrect++;
+                gameState.conceptsMastered.add(...question.concepts);
+            } else {
+                selectedOption.classList.add('incorrect');
+                options[question.correct].classList.add('correct');
+            }
+            
+            // Show feedback
+            feedbackElement.innerHTML = `
+                <div class="feedback-card">
+                    <div class="font-bold mb-2 ${isCorrect ? 'text-green-600' : 'text-red-600'}">
+                        ${isCorrect ? '✅ Correct!' : '❌ Not quite right.'}
+                    </div>
+                    <div class="text-gray-600 mb-2">${question.explanation}</div>
+                    <div class="text-sm text-gray-500">
+                        <strong>Key Concepts:</strong> ${question.concepts.join(', ')}
+                    </div>
+                </div>
+            `;
+            feedbackElement.classList.remove('hidden');
+            
+            // Update progress
+            gameState[scenario + 'Progress']++;
+            updateProgress();
+            
+            // Disable further selections for this question
+            options.forEach(opt => {
+                opt.style.pointerEvents = 'none';
+            });
+            
+            // Check if scenario complete
+            if (gameState[scenario + 'Progress'] === 4) {
+                document.getElementById(scenario + 'NextBtn').classList.remove('hidden');
+            }
+        }
+
+        function nextScenario(nextScenario) {
+            if (nextScenario === 'family') {
+                loadScenario('family');
+            } else if (nextScenario === 'community') {
+                loadScenario('community');
+            } else if (nextScenario === 'government') {
+                loadScenario('government');
+            }
+        }
+
+        function showResults() {
+            document.getElementById('scenarioContainer').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.remove('hidden');
+            
+            const percentage = Math.round((gameState.totalCorrect / gameState.totalQuestions) * 100);
+            const conceptsList = Array.from(gameState.conceptsMastered);
+            
+            let resultsHTML = `
+                <div class="mb-8">
+                    <div class="text-4xl font-bold text-gray-800 mb-4">Your Analysis Score: ${percentage}%</div>
+                    <div class="text-lg text-gray-600 mb-6">
+                        You correctly analyzed ${gameState.totalCorrect} out of ${gameState.totalQuestions} scenarios!
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                        <h3 class="text-xl font-bold mb-4 text-gray-800">Concepts You've Mastered:</h3>
+                        <div class="flex flex-wrap gap-2 justify-center">
+                            ${conceptsList.length > 0 ? 
+                                conceptsList.map(concept => `<span class="concept-tag">${concept}</span>`).join('') :
+                                '<span class="text-gray-500">Keep practicing to master more concepts!</span>'
+                            }
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            if (percentage >= 80) {
+                resultsHTML += `
+                    <div class="bg-green-50 rounded-lg p-6">
+                        <h3 class="text-xl font-bold text-green-800 mb-3">🌟 Excellent Economic Analysis!</h3>
+                        <p class="text-green-700">
+                            You have a strong understanding of how scarcity affects decision-making at all levels. 
+                            You can identify needs vs. wants, understand opportunity costs, and recognize trade-offs in complex situations.
+                        </p>
+                    </div>
+                `;
+            } else if (percentage >= 60) {
+                resultsHTML += `
+                    <div class="bg-blue-50 rounded-lg p-6">
+                        <h3 class="text-xl font-bold text-blue-800 mb-3">👍 Good Progress!</h3>
+                        <p class="text-blue-700">
+                            You're developing solid economic thinking skills. Try the simulation again to strengthen 
+                            your understanding of how scarcity shapes human choices.
+                        </p>
+                    </div>
+                `;
+            } else {
+                resultsHTML += `
+                    <div class="bg-yellow-50 rounded-lg p-6">
+                        <h3 class="text-xl font-bold text-yellow-800 mb-3">📚 Keep Learning!</h3>
+                        <p class="text-yellow-700">
+                            Economic analysis takes practice! Review the concepts and try again. 
+                            Focus on understanding why people make choices and what they give up in the process.
+                        </p>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('resultsContent').innerHTML = resultsHTML;
+        }
+
+        function updateProgress() {
+            const totalProgress = (gameState.individualProgress + gameState.familyProgress + gameState.communityProgress + gameState.governmentProgress) / 16 * 100;
+            document.getElementById('overallProgress').textContent = Math.round(totalProgress) + '%';
+            
+            // Update individual scenario progress
+            ['individual', 'family', 'community', 'government'].forEach(scenario => {
+                const progress = gameState[scenario + 'Progress'];
+                document.getElementById(scenario + 'Progress').textContent = `${progress}/4 questions`;
+            });
+        }
+
+        function getLevelName(scenario) {
+            const names = {
+                individual: 'Individual Analysis',
+                family: 'Family Analysis',
+                community: 'Community Analysis',
+                government: 'Government Analysis'
+            };
+            return names[scenario];
+        }
+
+        function resetSimulation() {
+            gameState = {
+                currentScenario: 'individual',
+                individualProgress: 0,
+                familyProgress: 0,
+                communityProgress: 0,
+                governmentProgress: 0,
+                totalCorrect: 0,
+                totalQuestions: 16,
+                conceptsMastered: new Set()
+            };
+            
+            document.getElementById('resultsScreen').classList.add('hidden');
+            document.getElementById('scenarioContainer').classList.add('hidden');
+            document.getElementById('welcomeScreen').classList.remove('hidden');
+            document.getElementById('currentLevel').textContent = 'Individual Analysis';
+            
+            // Hide all next buttons
+            ['individual', 'family', 'community', 'government'].forEach(scenario => {
+                document.getElementById(scenario + 'NextBtn').classList.add('hidden');
+            });
+            
+            updateProgress();
+        }
+
+        function showInstructions() {
+            document.getElementById('instructionsModal').classList.remove('hidden');
+        }
+
+        function hideInstructions() {
+            document.getElementById('instructionsModal'

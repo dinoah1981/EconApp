@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Crunch - Scarcity Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Inter:wght@400;500;600&family=Fredoka+One&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF6B6B;
+            --secondary: #4ECDC4;
+            --accent: #FFE66D;
+            --dark: #2C3E50;
+            --light: #FEFEFE;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .game-title {
+            font-family: 'Fredoka One', cursive;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .game-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .activity-item {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .activity-item:hover {
+            border-color: var(--primary);
+            transform: scale(1.02);
+        }
+        
+        .activity-item.selected {
+            border-color: var(--secondary);
+            background: rgba(78, 205, 196, 0.1);
+        }
+        
+        .time-slot {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px dashed #ccc;
+            transition: all 0.3s ease;
+            min-height: 80px;
+        }
+        
+        .time-slot.filled {
+            border-color: var(--secondary);
+            background: rgba(78, 205, 196, 0.1);
+            border-style: solid;
+        }
+        
+        .btn-action {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            transition: all 0.3s ease;
+        }
+        
+        .btn-action:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+        }
+        
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.35s;
+            transform-origin: 50% 50%;
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+    <!-- Navigation -->
+    <nav class="relative z-50 p-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="text-white text-xl font-bold">⏰ Time Crunch</div>
+            <div class="flex items-center space-x-4">
+                <div class="text-white text-sm">Time Left: <span id="timeLeft" class="font-bold">24:00</span></div>
+                <button onclick="showInstructions()" class="text-white hover:text-yellow-300 transition-colors text-sm">❓ Help</button>
+                <button onclick="window.location.href='index.html'" class="text-white hover:text-yellow-300 transition-colors text-sm">🏠 Home</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Game Header -->
+    <section class="relative z-10 pt-8 pb-8 px-6">
+        <div class="max-w-7xl mx-auto text-center">
+            <h1 class="game-title text-4xl md:text-6xl font-bold mb-4">24 Hour Challenge</h1>
+            <p class="text-white text-lg mb-8">You have 24 hours. How will you spend them? Every choice means giving up something else!</p>
+        </div>
+    </section>
+
+    <!-- Game Interface -->
+    <section class="relative z-10 pb-20 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid lg:grid-cols-3 gap-8">
+                <!-- Activities Panel -->
+                <div class="game-card rounded-2xl p-6">
+                    <h3 class="text-2xl font-bold mb-6 text-gray-800">🏃‍♂️ Activities</h3>
+                    <p class="text-gray-600 mb-6">Choose activities to fill your day. Each takes time and gives different benefits!</p>
+                    
+                    <div class="space-y-4">
+                        <div class="activity-item rounded-lg p-4" data-activity="sleep" data-hours="8" data-benefits="energy+40,health+30">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="text-3xl">😴</div>
+                                    <div>
+                                        <div class="font-semibold">Sleep</div>
+                                        <div class="text-sm text-gray-600">8 hours</div>
+                                    </div>
+                                </div>
+                                <div class="text-right text-sm">
+                                    <div class="text-green-600">Energy +40</div>
+                                    <div class="text-blue-600">Health +30</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="activity-item rounded-lg p-4" data-activity="school" data-hours="7" data-benefits="grades+50,knowledge+40">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="text-3xl">📚</div>
+                                    <div>
+                                        <div class="font-semibold">School/Homework</div>
+                                        <div class="text-sm text-gray-600">7 hours</div>
+                                    </div>
+                                </div>
+                                <div class="text-right text-sm">
+                                    <div class="text-purple-600">Grades +50</div>
+                                    <div class="text-green-600">Knowledge +40</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="activity-item rounded-lg p-4" data-activity="sports" data-hours="2" data-benefits="health+40,energy+20">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="text-3xl">⚽</div>
+                                    <div>
+                                        <div class="font-semibold">Sports/Exercise</div>
+                                        <div class="text-sm text-gray-600">2 hours</div>
+                                    </div>
+                                </div>
+                                <div class="text-right text-sm">
+                                    <div class="text-blue-600">Health +40</div>
+                                    <div class="text-green-600">Energy +20</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="activity-item rounded-lg p-4" data-activity="friends" data-hours="3" data-benefits="happiness+40,social+50">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="text-3xl">👥</div>
+                                    <div>
+                                        <div class="font-semibold">Friends/Social</div>
+                                        <div class="text-sm text-gray-600">3 hours</div>
+                                    </div>
+                                </div>
+                                <div class="text-right text-sm">
+                                    <div class="text-yellow-600">Happiness +40</div>
+                                    <div class="text-pink-600">Social +50</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="activity-item rounded-lg p-4" data-activity="gaming" data-hours="4" data-benefits="happiness+30,relaxation+20">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="text-3xl">🎮</div>
+                                    <div>
+                                        <div class="font-semibold">Gaming/Entertainment</div>
+                                        <div class="text-sm text-gray-600">4 hours</div>
+                                    </div>
+                                </div>
+                                <div class="text-right text-sm">
+                                    <div class="text-yellow-600">Happiness +30</div>
+                                    <div class="text-purple-600">Relaxation +20</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="activity-item rounded-lg p-4" data-activity="chores" data-hours="1" data-benefits="responsibility+30,family+20">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="text-3xl">🧹</div>
+                                    <div>
+                                        <div class="font-semibold">Chores/Responsibilities</div>
+                                        <div class="text-sm text-gray-600">1 hour</div>
+                                    </div>
+                                </div>
+                                <div class="text-right text-sm">
+                                    <div class="text-orange-600">Responsibility +30</div>
+                                    <div class="text-red-600">Family +20</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="activity-item rounded-lg p-4" data-activity="hobbies" data-hours="2" data-benefits="creativity+40,happiness+25">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="text-3xl">🎨</div>
+                                    <div>
+                                        <div class="font-semibold">Hobbies/Creative</div>
+                                        <div class="text-sm text-gray-600">2 hours</div>
+                                    </div>
+                                </div>
+                                <div class="text-right text-sm">
+                                    <div class="text-pink-600">Creativity +40</div>
+                                    <div class="text-yellow-600">Happiness +25</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                        <div class="text-center">
+                            <div class="text-lg font-bold text-gray-800">Selected: <span id="selectedCount">0</span> activities</div>
+                            <div class="text-sm text-gray-600">Total Time: <span id="totalHours">0</span>/24 hours</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schedule Panel -->
+                <div class="game-card rounded-2xl p-6">
+                    <h3 class="text-2xl font-bold mb-6 text-gray-800">📅 Your Schedule</h3>
+                    
+                    <div class="space-y-2">
+                        <div class="time-slot rounded-lg p-3 flex items-center justify-between" data-hour="0">
+                            <span class="font-semibold text-gray-600">12:00 AM - 6:00 AM</span>
+                            <div class="schedule-activity text-sm font-semibold"></div>
+                        </div>
+                        <div class="time-slot rounded-lg p-3 flex items-center justify-between" data-hour="6">
+                            <span class="font-semibold text-gray-600">6:00 AM - 7:00 AM</span>
+                            <div class="schedule-activity text-sm font-semibold"></div>
+                        </div>
+                        <div class="time-slot rounded-lg p-3 flex items-center justify-between" data-hour="7">
+                            <span class="font-semibold text-gray-600">7:00 AM - 8:00 AM</span>
+                            <div class="schedule-activity text-sm font-semibold"></div>
+                        </div>
+                        <div class="time-slot rounded-lg p-3 flex items-center justify-between" data-hour="8">
+                            <span class="font-semibold text-gray-600">8:00 AM - 3:00 PM</span>
+                            <div class="schedule-activity text-sm font-semibold"></div>
+                        </div>
+                        <div class="time-slot rounded-lg p-3 flex items-center justify-between" data-hour="15">
+                            <span class="font-semibold text-gray-600">3:00 PM - 4:00 PM</span>
+                            <div class="schedule-activity text-sm font-semibold"></div>
+                        </div>
+                        <div class="time-slot rounded-lg p-3 flex items-center justify-between" data-hour="16">
+                            <span class="font-semibold text-gray-600">4:00 PM - 5:00 PM</span>
+                            <div class="schedule-activity text-sm font-semibold"></div>
+                        </div>
+                        <div class="time-slot rounded-lg p-3 flex items-center justify-between" data-hour="17">
+                            <span class="font-semibold text-gray-600">5:00 PM - 6:00 PM</span>
+                            <div class="schedule-activity text-sm font-semibold"></div>
+                        </div>
+                        <div class="time-slot rounded-lg p-3 flex items-center justify-between" data-hour="18">
+                            <span class="font-semibold text-gray-600">6:00 PM - 7:00 PM</span>
+                            <div class="schedule-activity text-sm font-semibold"></div>
+                        </div>
+                        <div class="time-slot rounded-lg p-3 flex items-center justify-between" data-hour="19">
+                            <span class="font-semibold text-gray-600">7:00 PM - 8:00 PM</span>
+                            <div class="schedule-activity text-sm font-semibold"></div>
+                        </div>
+                        <div class="time-slot rounded-lg p-3 flex items-center justify-between" data-hour="20">
+                            <span class="font-semibold text-gray-600">8:00 PM - 9:00 PM</span>
+                            <div class="schedule-activity text-sm font-semibold"></div>
+                        </div>
+                        <div class="time-slot rounded-lg p-3 flex items-center justify-between" data-hour="21">
+                            <span class="font-semibold text-gray-600">9:00 PM - 10:00 PM</span>
+                            <div class="schedule-activity text-sm font-semibold"></div>
+                        </div>
+                        <div class="time-slot rounded-lg p-3 flex items-center justify-between" data-hour="22">
+                            <span class="font-semibold text-gray-600">10:00 PM - 11:00 PM</span>
+                            <div class="schedule-activity text-sm font-semibold"></div>
+                        </div>
+                        <div class="time-slot rounded-lg p-3 flex items-center justify-between" data-hour="23">
+                            <span class="font-semibold text-gray-600">11:00 PM - 12:00 AM</span>
+                            <div class="schedule-activity text-sm font-semibold"></div>
+                        </div>
+                    </div>
+
+                    <button onclick="clearSchedule()" class="w-full mt-4 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded-lg font-semibold transition-colors">
+                        🗑️ Clear Schedule
+                    </button>
+                </div>
+
+                <!-- Results Panel -->
+                <div class="game-card rounded-2xl p-6">
+                    <h3 class="text-2xl font-bold mb-6 text-gray-800">📊 Your Results</h3>
+                    
+                    <!-- Time Progress Circle -->
+                    <div class="flex justify-center mb-6">
+                        <div class="relative w-32 h-32">
+                            <svg class="progress-ring w-32 h-32">
+                                <circle class="progress-ring-circle stroke-gray-200" stroke-width="8" fill="transparent" r="56" cx="64" cy="64"/>
+                                <circle id="progressCircle" class="progress-ring-circle stroke-blue-500" stroke-width="8" fill="transparent" r="56" cx="64" cy="64" stroke-dasharray="351.86" stroke-dashoffset="351.86"/>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="text-center">
+                                    <div id="timeUsed" class="text-2xl font-bold text-gray-800">0</div>
+                                    <div class="text-sm text-gray-600">hours</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="space-y-4">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <h4 class="font-bold text-gray-800 mb-3">Your Stats</h4>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span>😴 Energy:</span>
+                                    <span id="energyStat" class="font-bold text-green-600">0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>📚 Grades:</span>
+                                    <span id="gradesStat" class="font-bold text-purple-600">0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>😊 Happiness:</span>
+                                    <span id="happinessStat" class="font-bold text-yellow-600">0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>💪 Health:</span>
+                                    <span id="healthStat" class="font-bold text-blue-600">0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>👥 Social:</span>
+                                    <span id="socialStat" class="font-bold text-pink-600">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <h4 class="font-bold text-gray-800 mb-3">Trade-offs Made</h4>
+                            <div id="tradeoffs" class="text-sm text-gray-600">
+                                Start selecting activities to see your trade-offs!
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="finishDay()" class="w-full mt-6 btn-action text-white py-3 rounded-lg font-semibold">
+                        🌟 See Final Results
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Instructions Modal -->
+    <div id="instructionsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-6">
+        <div class="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-96 overflow-y-auto">
+            <h2 class="text-3xl font-bold mb-6 text-gray-800">⏰ How to Play Time Crunch</h2>
+            <div class="space-y-4 text-gray-600">
+                <p><strong>Goal:</strong> Plan your perfect 24-hour day by choosing activities that matter most to you!</p>
+                <p><strong>The Challenge:</strong> You can't do everything. Every choice means giving up something else.</p>
+                <p><strong>How to Play:</strong> Click on activities to add them to your schedule. Watch your stats change!</p>
+                <p><strong>Strategy:</strong> Balance your needs - sleep, school, health, happiness, and social life.</p>
+                <p><strong>Learning:</strong> See how scarcity forces you to make tough choices about what matters most!</p>
+            </div>
+            <button onclick="hideInstructions()" class="mt-6 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold">
+                Got it! Let's Play
+            </button>
+        </div>
+    </div>
+
+    <!-- Results Modal -->
+    <div id="resultsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-6">
+        <div class="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-96 overflow-y-auto">
+            <h2 class="text-3xl font-bold mb-6 text-gray-800">🌟 Your Day Results</h2>
+            <div id="finalResults" class="space-y-4 text-gray-600">
+                <!-- Results will be populated here -->
+            </div>
+            <button onclick="resetGame()" class="mt-6 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold mr-4">
+                Try Again
+            </button>
+            <button onclick="window.location.href='index.html'" class="mt-6 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold">
+                Back to Home
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let gameState = {
+            selectedActivities: [],
+            schedule: {},
+            timeUsed: 0,
+            stats: {
+                energy: 0,
+                grades: 0,
+                happiness: 0,
+                health: 0,
+                social: 0,
+                knowledge: 0,
+                creativity: 0,
+                responsibility: 0,
+                relaxation: 0
+            }
+        };
+
+        // Activity data
+        const activities = {
+            sleep: { emoji: '😴', name: 'Sleep', hours: 8, color: '#4ECDC4' },
+            school: { emoji: '📚', name: 'School/Homework', hours: 7, color: '#FF6B6B' },
+            sports: { emoji: '⚽', name: 'Sports/Exercise', hours: 2, color: '#FFE66D' },
+            friends: { emoji: '👥', name: 'Friends/Social', hours: 3, color: '#FF6B6B' },
+            gaming: { emoji: '🎮', name: 'Gaming/Entertainment', hours: 4, color: '#4ECDC4' },
+            chores: { emoji: '🧹', name: 'Chores/Responsibilities', hours: 1, color: '#FFE66D' },
+            hobbies: { emoji: '🎨', name: 'Hobbies/Creative', hours: 2, color: '#FF6B6B' }
+        };
+
+        // Initialize game
+        document.addEventListener('DOMContentLoaded', function() {
+            setupActivitySelection();
+            showInstructions();
+        });
+
+        function setupActivitySelection() {
+            const activityItems = document.querySelectorAll('.activity-item');
+            activityItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const activity = this.dataset.activity;
+                    toggleActivity(activity, this);
+                });
+            });
+        }
+
+        function toggleActivity(activity, element) {
+            if (gameState.selectedActivities.includes(activity)) {
+                // Remove activity
+                gameState.selectedActivities = gameState.selectedActivities.filter(a => a !== activity);
+                element.classList.remove('selected');
+                removeFromSchedule(activity);
+            } else {
+                // Add activity
+                const activityData = activities[activity];
+                if (gameState.timeUsed + activityData.hours <= 24) {
+                    gameState.selectedActivities.push(activity);
+                    element.classList.add('selected');
+                    addToSchedule(activity);
+                } else {
+                    showFeedback("⏰ Not enough time left! Remove something first.");
+                }
+            }
+            updateDisplay();
+        }
+
+        function addToSchedule(activity) {
+            const activityData = activities[activity];
+            const benefits = document.querySelector(`[data-activity="${activity}"]`).dataset.benefits.split(',');
+            
+            // Find available time slots
+            let hoursAdded = 0;
+            for (let hour = 0; hour < 24 && hoursAdded < activityData.hours; hour++) {
+                if (!gameState.schedule[hour]) {
+                    gameState.schedule[hour] = activity;
+                    hoursAdded++;
+                }
+            }
+
+            // Update stats
+            benefits.forEach(benefit => {
+                const [stat, value] = benefit.split('+');
+                gameState.stats[stat] += parseInt(value);
+            });
+
+            updateScheduleDisplay();
+        }
+
+        function removeFromSchedule(activity) {
+            // Remove from schedule
+            Object.keys(gameState.schedule).forEach(hour => {
+                if (gameState.schedule[hour] === activity) {
+                    delete gameState.schedule[hour];
+                }
+            });
+
+            // Remove benefits
+            const benefits = document.querySelector(`[data-activity="${activity}"]`).dataset.benefits.split(',');
+            benefits.forEach(benefit => {
+                const [stat, value] = benefit.split('+');
+                gameState.stats[stat] -= parseInt(value);
+            });
+
+            updateScheduleDisplay();
+        }
+
+        function updateScheduleDisplay() {
+            // Clear all time slots
+            document.querySelectorAll('.time-slot').forEach(slot => {
+                slot.classList.remove('filled');
+                const activityDiv = slot.querySelector('.schedule-activity');
+                activityDiv.textContent = '';
+                activityDiv.className = 'schedule-activity text-sm font-semibold';
+            });
+
+            // Fill scheduled slots
+            Object.keys(gameState.schedule).forEach(hour => {
+                const activity = gameState.schedule[hour];
+                const slot = document.querySelector(`[data-hour="${hour}"]`);
+                if (slot && activity) {
+                    slot.classList.add('filled');
+                    const activityDiv = slot.querySelector('.schedule-activity');
+                    const activityData = activities[activity];
+                    activityDiv.textContent = `${activityData.emoji} ${activityData.name}`;
+                    activityDiv.style.color = activityData.color;
+                }
+            });
+        }
+
+        function updateDisplay() {
+            // Calculate time used
+            gameState.timeUsed = gameState.selectedActivities.reduce((total, activity) => {
+                return total + activities[activity].hours;
+            }, 0);
+
+            // Update UI
+            document.getElementById('selectedCount').textContent = gameState.selectedActivities.length;
+            document.getElementById('totalHours').textContent = gameState.timeUsed;
+            document.getElementById('timeLeft').textContent = `${23 - gameState.timeUsed}:00`;
+            document.getElementById('timeUsed').textContent = gameState.timeUsed;
+
+            // Update progress circle
+            const progressCircle = document.getElementById('progressCircle');
+            const circumference = 2 * Math.PI * 56;
+            const progress = (gameState.timeUsed / 24) * circumference;
+            progressCircle.style.strokeDashoffset = circumference - progress;
+
+            // Update stats
+            document.getElementById('energyStat').textContent = gameState.stats.energy;
+            document.getElementById('gradesStat').textContent = gameState.stats.grades;
+            document.getElementById('happinessStat').textContent = gameState.stats.happiness;
+            document.getElementById('healthStat').textContent = gameState.stats.health;
+            document.getElementById('socialStat').textContent = gameState.stats.social;
+
+            // Update trade-offs
+            updateTradeoffs();
+        }
+
+        function updateTradeoffs() {
+            const tradeoffsDiv = document.getElementById('tradeoffs');
+            const timeLeft = 24 - gameState.timeUsed;
+            
+            let tradeoffs = [];
+            
+            if (timeLeft < 8 && !gameState.selectedActivities.includes('sleep')) {
+                tradeoffs.push("😴 No time for proper sleep - you'll be tired tomorrow!");
+            }
+            
+            if (!gameState.selectedActivities.includes('school')) {
+                tradeoffs.push("📚 Skipping schoolwork will hurt your grades!");
+            }
+            
+            if (!gameState.selectedActivities.includes('friends') && gameState.selectedActivities.includes('gaming')) {
+                tradeoffs.push("👥 Gaming instead of friends might make you feel lonely!");
+            }
+            
+            if (gameState.selectedActivities.includes('gaming') && gameState.selectedActivities.includes('hobbies')) {
+                tradeoffs.push("🎮🎨 Great balance of fun and creativity!");
+            }
+
+            if (tradeoffs.length === 0) {
+                tradeoffs.push("🤔 Every choice has trade-offs. What are you giving up?");
+            }
+
+            tradeoffsDiv.innerHTML = tradeoffs.map(t => `<div class="mb-2">${t}</div>`).join('');
+        }
+
+        function clearSchedule() {
+            gameState.selectedActivities = [];
+            gameState.schedule = {};
+            
+            // Reset all stats
+            Object.keys(gameState.stats).forEach(stat => {
+                gameState.stats[stat] = 0;
+            });
+
+            // Update UI
+            document.querySelectorAll('.activity-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            updateScheduleDisplay();
+            updateDisplay();
+            showFeedback("🗑️ Schedule cleared! Start fresh.");
+        }
+
+        function finishDay() {
+            if (gameState.timeUsed === 0) {
+                showFeedback("⚠️ Select some activities first!");
+                return;
+            }
+
+            const resultsDiv = document.getElementById('finalResults');
+            let resultsHTML = '';
+
+            // Overall assessment
+            const happiness = gameState.stats.happiness;
+            const health = gameState.stats.health;
+            const grades = gameState.stats.grades;
+            const energy = gameState.stats.energy;
+
+            resultsHTML += `<div class="text-center mb-6">
+                <div class="text-6xl mb-4">🌟</div>
+                <h3 class="text-2xl font-bold text-gray-800">Your Perfect Day Results</h3>
+            </div>`;
+
+            // Stats breakdown
+            resultsHTML += `<div class="grid md:grid-cols-2 gap-4 mb-6">`;
+            resultsHTML += createStatCard('😴 Energy', gameState.stats.energy, 'How energetic you feel');
+            resultsHTML += createStatCard('📚 Grades', gameState.stats.grades, 'Academic performance');
+            resultsHTML += createStatCard('😊 Happiness', gameState.stats.happiness, 'Overall life satisfaction');
+            resultsHTML += createStatCard('💪 Health', gameState.stats.health, 'Physical wellbeing');
+            resultsHTML += `</div>`;
+
+            // Personalized feedback
+            resultsHTML += `<div class="bg-gray-50 rounded-lg p-4 mb-4">
+                <h4 class="font-bold text-gray-800 mb-2">🎯 Your Trade-off Analysis</h4>
+                <div class="text-sm text-gray-600">`;
+
+            if (energy < 30) {
+                resultsHTML += `<p>⚠️ You're exhausted! Consider getting more sleep.</p>`;
+            } else if (energy > 60) {
+                resultsHTML += `<p>✅ Great energy levels! You'll be productive tomorrow.</p>`;
+            }
+
+            if (grades < 30) {
+                resultsHTML += `<p>📉 Your grades might suffer without more study time.</p>`;
+            } else if (grades > 70) {
+                resultsHTML += `<p>🎓 Excellent focus on academics! Keep it up!</p>`;
+            }
+
+            if (happiness < 40) {
+                resultsHTML += `<p>😔 You prioritized responsibilities over happiness. Is this sustainable?</p>`;
+            } else if (happiness > 80) {
+                resultsHTML += `<p>🎉 Amazing! You found great ways to enjoy your day!</p>`;
+            }
+
+            resultsHTML += `</div></div>`;
+
+            // Scarcity lesson
+            resultsHTML += `<div class="bg-blue-50 rounded-lg p-4">
+                <h4 class="font-bold text-gray-800 mb-2">💡 What You Learned About Scarcity</h4>
+                <p class="text-sm text-gray-600">Time is limited to 24 hours per day. Every activity you chose meant giving up something else. This is the fundamental concept of scarcity - we can't have everything we want, so we must make choices and face trade-offs!</p>
+            </div>`;
+
+            resultsDiv.innerHTML = resultsHTML;
+            document.getElementById('resultsModal').classList.remove('hidden');
+        }
+
+        function createStatCard(label, value, description) {
+            let color = 'text-gray-600';
+            let emoji = '😐';
+            
+            if (value >= 80) {
+                color = 'text-green-600';
+                emoji = '😄';
+            } else if (value >= 60) {
+                color = 'text-blue-600';
+                emoji = '😊';
+            } else if (value >= 40) {
+                color = 'text-yellow-600';
+                emoji = '😐';
+            } else if (value >= 20) {
+                color = 'text-orange-600';
+                emoji = '😕';
+            } else {
+                color = 'text-red-600';
+                emoji = '😞';
+            }
+
+            return `
+                <div class="bg-white rounded-lg p-4 border">
+                    <div class="text-center">
+                        <div class="text-3xl mb-2">${emoji}</div>
+                        <div class="text-lg font-bold ${color}">${value}</div>
+                        <div class="text-sm text-gray-600">${label}</div>
+                        <div class="text-xs text-gray-500 mt-1">${description}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function resetGame() {
+            gameState = {
+                selectedActivities: [],
+                schedule: {},
+                timeUsed: 0,
+                stats: {
+                    energy: 0,
+                    grades: 0,
+                    happiness: 0,
+                    health: 0,
+                    social: 0,
+                    knowledge: 0,
+                    creativity: 0,
+                    responsibility: 0,
+                    relaxation: 0
+                }
+            };
+
+            document.querySelectorAll('.activity-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+
+            updateScheduleDisplay();
+            updateDisplay();
+            document.getElementById('resultsModal').classList.add('hidden');
+            showFeedback("🔄 Game reset! Try a different approach.");
+        }
+
+        function showInstructions() {
+            document.getElementById('instructionsModal').classList.remove('hidden');
+        }
+
+        function hideInstructions() {
+            document.getElementById('instructionsModal').classList.add('hidden');
+        }
+
+        function showFeedback(message) {
+            // Create temporary feedback element
+            const feedback = document.createElement('div');
+            feedback.className = 'fixed top-20 right-6 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300';
+            feedback.textContent = message;
+            document.body.appendChild(feedback);
+
+            setTimeout(() => {
+                feedback.style.transform = 'translateX(0)';
+            }, 100);
+
+            setTimeout(() => {
+                feedback.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    document.body.removeChild(feedback);
+                }, 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

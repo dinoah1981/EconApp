@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Island Survival - Scarcity Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Inter:wght@400;500;600&family=Fredoka+One&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF6B6B;
+            --secondary: #4ECDC4;
+            --accent: #FFE66D;
+            --dark: #2C3E50;
+            --light: #FEFEFE;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .game-title {
+            font-family: 'Fredoka One', cursive;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .game-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .resource-item {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .resource-item:hover {
+            border-color: var(--primary);
+            transform: scale(1.02);
+        }
+        
+        .resource-item.selected {
+            border-color: var(--secondary);
+            background: rgba(78, 205, 196, 0.1);
+        }
+        
+        .resource-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: rgba(200, 200, 200, 0.5);
+        }
+        
+        .action-btn {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            transition: all 0.3s ease;
+        }
+        
+        .action-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+        }
+        
+        .action-btn:disabled {
+            background: #ccc;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        
+        .island-canvas {
+            background: radial-gradient(circle at center, #87CEEB 0%, #98FB98 50%, #8FBC8F 100%);
+            border: 3px solid #DEB887;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .resource-icon {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.35s;
+            transform-origin: 50% 50%;
+        }
+        
+        .day-night-cycle {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 50%;
+            transition: background 2s ease;
+        }
+        
+        .day {
+            background: linear-gradient(135deg, #87CEEB 0%, #98FB98 100%);
+        }
+        
+        .night {
+            background: linear-gradient(135deg, #191970 0%, #483D8B 100%);
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+    <!-- Navigation -->
+    <nav class="relative z-50 p-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="text-white text-xl font-bold">🏝️ Island Survival</div>
+            <div class="flex items-center space-x-4">
+                <div class="text-white text-sm">Day: <span id="currentDay" class="font-bold">1</span>/7</div>
+                <div class="text-white text-sm">⏰ <span id="timeOfDay" class="font-bold">Morning</span></div>
+                <button onclick="showInstructions()" class="text-white hover:text-yellow-300 transition-colors text-sm">❓ Help</button>
+                <button onclick="window.location.href='index.html'" class="text-white hover:text-yellow-300 transition-colors text-sm">🏠 Home</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Game Header -->
+    <section class="relative z-10 pt-8 pb-8 px-6">
+        <div class="max-w-7xl mx-auto text-center">
+            <h1 class="game-title text-4xl md:text-6xl font-bold mb-4">Desert Island Challenge</h1>
+            <p class="text-white text-lg mb-8">You're stranded on an island with limited resources. Make smart choices to survive and thrive!</p>
+        </div>
+    </section>
+
+    <!-- Game Interface -->
+    <section class="relative z-10 pb-20 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid lg:grid-cols-3 gap-8">
+                <!-- Resources Panel -->
+                <div class="game-card rounded-2xl p-6">
+                    <h3 class="text-2xl font-bold mb-6 text-gray-800">🏝️ Island Resources</h3>
+                    
+                    <!-- Health -->
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-semibold text-gray-700">❤️ Health</span>
+                            <span id="healthDisplay" class="font-bold text-red-600">100%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div id="healthBar" class="bg-red-500 h-3 rounded-full transition-all duration-500" style="width: 100%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Energy -->
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-semibold text-gray-700">⚡ Energy</span>
+                            <span id="energyDisplay" class="font-bold text-yellow-600">100%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div id="energyBar" class="bg-yellow-500 h-3 rounded-full transition-all duration-500" style="width: 100%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Hunger -->
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-semibold text-gray-700">🍎 Hunger</span>
+                            <span id="hungerDisplay" class="font-bold text-green-600">80%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div id="hungerBar" class="bg-green-500 h-3 rounded-full transition-all duration-500" style="width: 80%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Thirst -->
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-semibold text-gray-700">💧 Thirst</span>
+                            <span id="thirstDisplay" class="font-bold text-blue-600">70%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div id="thirstBar" class="bg-blue-500 h-3 rounded-full transition-all duration-500" style="width: 70%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Morale -->
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-semibold text-gray-700">😊 Morale</span>
+                            <span id="moraleDisplay" class="font-bold text-purple-600">50%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div id="moraleBar" class="bg-purple-500 h-3 rounded-full transition-all duration-500" style="width: 50%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Inventory -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-bold text-gray-800 mb-3">🎒 Inventory</h4>
+                        <div id="inventory" class="space-y-1 text-sm">
+                            <div class="flex justify-between">
+                                <span>🏠 Shelter Materials:</span>
+                                <span class="font-bold">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>🪓 Tools:</span>
+                                <span class="font-bold">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>🔥 Fire Materials:</span>
+                                <span class="font-bold">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>🍌 Food Supply:</span>
+                                <span class="font-bold">3 days</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>💧 Water Supply:</span>
+                                <span class="font-bold">2 days</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Island Visualization -->
+                <div class="game-card rounded-2xl p-6">
+                    <h3 class="text-2xl font-bold mb-6 text-gray-800">🏝️ Your Island</h3>
+                    
+                    <!-- Island Canvas -->
+                    <div class="island-canvas w-64 h-64 mx-auto mb-6 relative">
+                        <div id="dayNightCycle" class="day-night-cycle day"></div>
+                        
+                        <!-- Static Resources -->
+                        <div class="resource-icon" style="top: 20px; left: 30px; width: 40px; height: 40px;">
+                            🌴
+                        </div>
+                        <div class="resource-icon" style="top: 60px; right: 40px; width: 40px; height: 40px; animation-delay: 1s;">
+                            🪨
+                        </div>
+                        <div class="resource-icon" style="bottom: 40px; left: 50px; width: 40px; height: 40px; animation-delay: 2s;">
+                            🥥
+                        </div>
+                        <div class="resource-icon" style="top: 80px; left: 80px; width: 40px; height: 40px; animation-delay: 0.5s;">
+                            🪵
+                        </div>
+                        <div class="resource-icon" style="bottom: 60px; right: 30px; width: 40px; height: 40px; animation-delay: 1.5s;">
+                            🎣
+                        </div>
+                        
+                        <!-- Dynamic Resources (appear when collected) -->
+                        <div id="dynamicResources"></div>
+                    </div>
+
+                    <!-- Time Progress Circle -->
+                    <div class="flex justify-center mb-6">
+                        <div class="relative w-24 h-24">
+                            <svg class="progress-ring w-24 h-24">
+                                <circle class="progress-ring-circle stroke-gray-200" stroke-width="6" fill="transparent" r="40" cx="48" cy="48"/>
+                                <circle id="dayProgress" class="progress-ring-circle stroke-yellow-500" stroke-width="6" fill="transparent" r="40" cx="48" cy="48" stroke-dasharray="251.33" stroke-dashoffset="251.33"/>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="text-center">
+                                    <div id="dayNumber" class="text-lg font-bold text-gray-800">1</div>
+                                    <div class="text-xs text-gray-600">day</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Current Actions -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-bold text-gray-800 mb-3">🎯 Current Actions</h4>
+                        <div id="currentActions" class="text-sm text-gray-600">
+                            Start your survival journey!
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions Panel -->
+                <div class="game-card rounded-2xl p-6">
+                    <h3 class="text-2xl font-bold mb-6 text-gray-800">⚡ Daily Actions</h3>
+                    <p class="text-gray-600 mb-6">Choose how to spend your time and energy each day!</p>
+                    
+                    <div class="space-y-4">
+                        <!-- Survival Actions -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
+                                🏕️ Survival
+                            </h4>
+                            <div class="space-y-3">
+                                <div class="resource-item rounded-lg p-4" data-action="build-shelter" data-energy="30" data-time="4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">🏠</div>
+                                            <div>
+                                                <div class="font-semibold">Build Shelter</div>
+                                                <div class="text-sm text-gray-600">Protection from weather</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right text-sm">
+                                            <div class="text-red-600">-30 energy</div>
+                                            <div class="text-blue-600">4 hours</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="resource-item rounded-lg p-4" data-action="gather-food" data-energy="20" data-time="3">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">🍌</div>
+                                            <div>
+                                                <div class="font-semibold">Gather Food</div>
+                                                <div class="text-sm text-gray-600">Find fruits and berries</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right text-sm">
+                                            <div class="text-red-600">-20 energy</div>
+                                            <div class="text-blue-600">3 hours</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="resource-item rounded-lg p-4" data-action="find-water" data-energy="15" data-time="2">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">💧</div>
+                                            <div>
+                                                <div class="font-semibold">Find Water</div>
+                                                <div class="text-sm text-gray-600">Locate fresh water source</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right text-sm">
+                                            <div class="text-red-600">-15 energy</div>
+                                            <div class="text-blue-600">2 hours</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="resource-item rounded-lg p-4" data-action="make-fire" data-energy="25" data-time="3">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">🔥</div>
+                                            <div>
+                                                <div class="font-semibold">Make Fire</div>
+                                                <div class="text-sm text-gray-600">Warmth and cooking</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right text-sm">
+                                            <div class="text-red-600">-25 energy</div>
+                                            <div class="text-blue-600">3 hours</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Improvement Actions -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
+                                🛠️ Improvement
+                            </h4>
+                            <div class="space-y-3">
+                                <div class="resource-item rounded-lg p-4" data-action="craft-tools" data-energy="35" data-time="5">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">🪓</div>
+                                            <div>
+                                                <div class="font-semibold">Craft Tools</div>
+                                                <div class="text-sm text-gray-600">Make useful items</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right text-sm">
+                                            <div class="text-red-600">-35 energy</div>
+                                            <div class="text-blue-600">5 hours</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="resource-item rounded-lg p-4" data-action="explore" data-energy="20" data-time="4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">🗺️</div>
+                                            <div>
+                                                <div class="font-semibold">Explore Island</div>
+                                                <div class="text-sm text-gray-600">Find new resources</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right text-sm">
+                                            <div class="text-red-600">-20 energy</div>
+                                            <div class="text-blue-600">4 hours</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="resource-item rounded-lg p-4" data-action="signal-help" data-energy="10" data-time="2">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">🆘</div>
+                                            <div>
+                                                <div class="font-semibold">Signal for Help</div>
+                                                <div class="text-sm text-gray-600">Increase rescue chance</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right text-sm">
+                                            <div class="text-red-600">-10 energy</div>
+                                            <div class="text-blue-600">2 hours</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Rest Actions -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
+                                😴 Rest
+                            </h4>
+                            <div class="space-y-3">
+                                <div class="resource-item rounded-lg p-4" data-action="rest" data-energy="40" data-time="8">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">😴</div>
+                                            <div>
+                                                <div class="font-semibold">Rest & Sleep</div>
+                                                <div class="text-sm text-gray-600">Recover energy</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right text-sm">
+                                            <div class="text-green-600">+40 energy</div>
+                                            <div class="text-blue-600">8 hours</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 space-y-3">
+                        <button onclick="endDay()" class="w-full bg-purple-500 hover:bg-purple-600 text-white py-3 rounded-lg font-semibold transition-colors">
+                            🌅 End Day
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Instructions Modal -->
+    <div id="instructionsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-6">
+        <div class="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-96 overflow-y-auto">
+            <h2 class="text-3xl font-bold mb-6 text-gray-800">🏝️ How to Play Island Survival</h2>
+            <div class="space-y-4 text-gray-600">
+                <p><strong>Goal:</strong> Survive 7 days on a deserted island by managing your resources wisely!</p>
+                <p><strong>The Challenge:</strong> Limited energy, time, and resources force you to make tough choices.</p>
+                <p><strong>How to Play:</strong> Choose daily actions to maintain health, energy, hunger, thirst, and morale.</p>
+                <p><strong>Strategy:</strong> Balance immediate survival needs with long-term improvements.</p>
+                <p><strong>Learning:</strong> Experience how scarcity forces prioritization and trade-offs in survival situations!</p>
+            </div>
+            <button onclick="hideInstructions()" class="mt-6 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold">
+                Got it! Let's Survive
+            </button>
+        </div>
+    </div>
+
+    <!-- Results Modal -->
+    <div id="resultsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-6">
+        <div class="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-96 overflow-y-auto">
+            <h2 class="text-3xl font-bold mb-6 text-gray-800">🏆 Survival Results</h2>
+            <div id="finalResults" class="space-y-4 text-gray-600">
+                <!-- Results will be populated here -->
+            </div>
+            <button onclick="resetGame()" class="mt-6 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold mr-4">
+                Try Again
+            </button>
+            <button onclick="window.location.href='index.html'" class="mt-6 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold">
+                Back to Home
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let gameState = {
+            day: 1,
+            timeOfDay: 'Morning',
+            resources: {
+                health: 100,
+                energy: 100,
+                hunger: 80,
+                thirst: 70,
+                morale: 50
+            },
+            inventory: {
+                shelter: 0,
+                tools: 0,
+                fire: 0,
+                food: 3,
+                water: 2
+            },
+            selectedActions: [],
+            totalEnergy: 100,
+            rescueChance: 10
+        };
+
+        // Action data
+        const actions = {
+            'build-shelter': { 
+                name: 'Build Shelter', 
+                energy: -30, 
+                time: 4,
+                effects: { shelter: 1 },
+                description: 'Build a basic shelter for protection'
+            },
+            'gather-food': { 
+                name: 'Gather Food', 
+                energy: -20, 
+                time: 3,
+                effects: { food: 2 },
+                description: 'Find fruits and berries'
+            },
+            'find-water': { 
+                name: 'Find Water', 
+                energy: -15, 
+                time: 2,
+                effects: { water: 2 },
+                description: 'Locate fresh water source'
+            },
+            'make-fire': { 
+                name: 'Make Fire', 
+                energy: -25, 
+                time: 3,
+                effects: { fire: 1 },
+                description: 'Create fire for warmth and cooking'
+            },
+            'craft-tools': { 
+                name: 'Craft Tools', 
+                energy: -35, 
+                time: 5,
+                effects: { tools: 1 },
+                description: 'Make useful survival tools'
+            },
+            'explore': { 
+                name: 'Explore Island', 
+                energy: -20, 
+                time: 4,
+                effects: { rescue: 5 },
+                description: 'Search for new resources'
+            },
+            'signal-help': { 
+                name: 'Signal for Help', 
+                energy: -10, 
+                time: 2,
+                effects: { rescue: 10 },
+                description: 'Increase chance of rescue'
+            },
+            'rest': { 
+                name: 'Rest & Sleep', 
+                energy: 40, 
+                time: 8,
+                effects: { energy: 40 },
+                description: 'Recover energy'
+            }
+        };
+
+        // Initialize game
+        document.addEventListener('DOMContentLoaded', function() {
+            setupActionSelection();
+            updateDisplay();
+            showInstructions();
+            startDayNightCycle();
+        });
+
+        function setupActionSelection() {
+            const actionItems = document.querySelectorAll('.resource-item');
+            actionItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const action = this.dataset.action;
+                    toggleAction(action, this);
+                });
+            });
+        }
+
+        function toggleAction(actionId, element) {
+            const isSelected = gameState.selectedActions.includes(actionId);
+            const action = actions[actionId];
+
+            if (isSelected) {
+                // Remove action
+                gameState.selectedActions = gameState.selectedActions.filter(a => a !== actionId);
+                element.classList.remove('selected');
+            } else {
+                // Check if affordable
+                const energyCost = action.energy < 0 ? Math.abs(action.energy) : 0;
+                if (gameState.resources.energy >= energyCost) {
+                    gameState.selectedActions.push(actionId);
+                    element.classList.add('selected');
+                } else {
+                    showFeedback("⚡ Not enough energy for this action!");
+                }
+            }
+            
+            updateActionDisplay();
+        }
+
+        function updateActionDisplay() {
+            const totalTime = gameState.selectedActions.reduce((sum, actionId) => {
+                return sum + actions[actionId].time;
+            }, 0);
+
+            const totalEnergyCost = gameState.selectedActions.reduce((sum, actionId) => {
+                const action = actions[actionId];
+                return sum + (action.energy < 0 ? Math.abs(action.energy) : 0);
+            }, 0);
+
+            // Update current actions display
+            const actionsDiv = document.getElementById('currentActions');
+            if (gameState.selectedActions.length === 0) {
+                actionsDiv.textContent = 'No actions selected for today';
+            } else {
+                actionsDiv.innerHTML = gameState.selectedActions.map(actionId => {
+                    const action = actions[actionId];
+                    return `• ${action.name}`;
+                }).join('<br>');
+            }
+
+            // Update affordability
+            document.querySelectorAll('.resource-item').forEach(element => {
+                const actionId = element.dataset.action;
+                const action = actions[actionId];
+                const energyCost = action.energy < 0 ? Math.abs(action.energy) : 0;
+                const canAfford = gameState.resources.energy >= energyCost;
+                const isSelected = element.classList.contains('selected');
+                
+                if (!canAfford && !isSelected) {
+                    element.classList.add('disabled');
+                } else {
+                    element.classList.remove('disabled');
+                }
+            });
+        }
+
+        function endDay() {
+            if (gameState.selectedActions.length === 0) {
+                showFeedback("⚠️ Select some actions first!");
+                return;
+            }
+
+            // Apply action effects
+            gameState.selectedActions.forEach(actionId => {
+                const action = actions[actionId];
+                
+                // Apply energy changes
+                gameState.resources.energy += action.energy;
+                
+                // Apply inventory changes
+                Object.entries(action.effects).forEach(([key, value]) => {
+                    if (key === 'rescue') {
+                        gameState.rescueChance += value;
+                    } else if (key === 'energy') {
+                        // Already handled above
+                    } else {
+                        gameState.inventory[key] += value;
+                    }
+                });
+            });
+
+            // Apply daily resource consumption
+            gameState.resources.hunger -= 15;
+            gameState.resources.thirst -= 20;
+            gameState.resources.morale -= 5;
+
+            // Apply shelter bonus if available
+            if (gameState.inventory.shelter > 0) {
+                gameState.resources.morale += 10;
+            }
+
+            // Apply fire bonus if available
+            if (gameState.inventory.fire > 0) {
+                gameState.resources.morale += 5;
+                gameState.resources.health += 5;
+            }
+
+            // Apply food/water penalties if unavailable
+            if (gameState.inventory.food <= 0) {
+                gameState.resources.hunger -= 20;
+                gameState.resources.health -= 10;
+            }
+
+            if (gameState.inventory.water <= 0) {
+                gameState.resources.thirst -= 30;
+                gameState.resources.health -= 15;
+            }
+
+            // Ensure resources stay within bounds
+            Object.keys(gameState.resources).forEach(resource => {
+                gameState.resources[resource] = Math.max(0, Math.min(100, gameState.resources[resource]));
+            });
+
+            // Check for game over conditions
+            if (gameState.resources.health <= 0) {
+                endGame(false, "Your health reached zero. You didn't survive the island.");
+                return;
+            }
+
+            // Check for rescue
+            if (Math.random() * 100 < gameState.rescueChance) {
+                endGame(true, "You were rescued! Your survival skills paid off!");
+                return;
+            }
+
+            // Reset for next day
+            gameState.day++;
+            gameState.selectedActions = [];
+            gameState.inventory.food = Math.max(0, gameState.inventory.food - 1);
+            gameState.inventory.water = Math.max(0, gameState.inventory.water - 1);
+
+            // Reset action selection
+            document.querySelectorAll('.resource-item').forEach(element => {
+                element.classList.remove('selected');
+            });
+
+            if (gameState.day > 7) {
+                endGame(true, "You survived a full week! You're a true survivor!");
+            } else {
+                updateDisplay();
+                showFeedback(`🌅 Day ${gameState.day - 1} complete! ${7 - gameState.day + 1} days remaining.`);
+            }
+        }
+
+        function updateDisplay() {
+            // Update resource displays
+            document.getElementById('currentDay').textContent = gameState.day;
+            document.getElementById('timeOfDay').textContent = gameState.timeOfDay;
+            document.getElementById('healthDisplay').textContent = `${gameState.resources.health}%`;
+            document.getElementById('energyDisplay').textContent = `${gameState.resources.energy}%`;
+            document.getElementById('hungerDisplay').textContent = `${gameState.resources.hunger}%`;
+            document.getElementById('thirstDisplay').textContent = `${gameState.resources.thirst}%`;
+            document.getElementById('moraleDisplay').textContent = `${gameState.resources.morale}%`;
+
+            // Update progress bars
+            document.getElementById('healthBar').style.width = `${gameState.resources.health}%`;
+            document.getElementById('energyBar').style.width = `${gameState.resources.energy}%`;
+            document.getElementById('hungerBar').style.width = `${gameState.resources.hunger}%`;
+            document.getElementById('thirstBar').style.width = `${gameState.resources.thirst}%`;
+            document.getElementById('moraleBar').style.width = `${gameState.resources.morale}%`;
+
+            // Update inventory
+            const inventoryDiv = document.getElementById('inventory');
+            inventoryDiv.innerHTML = `
+                <div class="flex justify-between">
+                    <span>🏠 Shelter Materials:</span>
+                    <span class="font-bold">${gameState.inventory.shelter}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>🪓 Tools:</span>
+                    <span class="font-bold">${gameState.inventory.tools}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>🔥 Fire Materials:</span>
+                    <span class="font-bold">${gameState.inventory.fire}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>🍌 Food Supply:</span>
+                    <span class="font-bold">${gameState.inventory.food} days</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>💧 Water Supply:</span>
+                    <span class="font-bold">${gameState.inventory.water} days</span>
+                </div>
+            `;
+
+            // Update day progress circle
+            const dayProgress = (gameState.day / 7) * 251.33;
+            document.getElementById('dayProgress').style.strokeDashoffset = 251.33 - dayProgress;
+            document.getElementById('dayNumber').textContent = gameState.day;
+
+            updateActionDisplay();
+        }
+
+        function startDayNightCycle() {
+            const times = ['Morning', 'Afternoon', 'Evening', 'Night'];
+            let currentTimeIndex = 0;
+
+            setInterval(() => {
+                currentTimeIndex = (currentTimeIndex + 1) % times.length;
+                gameState.timeOfDay = times[currentTimeIndex];
+                document.getElementById('timeOfDay').textContent = gameState.timeOfDay;
+
+                // Update day/night visual
+                const cycle = document.getElementById('dayNightCycle');
+                if (gameState.timeOfDay === 'Night') {
+                    cycle.classList.remove('day');
+                    cycle.classList.add('night');
+                } else {
+                    cycle.classList.remove('night');
+                    cycle.classList.add('day');
+                }
+            }, 5000); // Change every 5 seconds for demo
+        }
+
+        function endGame(success, message) {
+            const resultsDiv = document.getElementById('finalResults');
+            let resultsHTML = '';
+
+            resultsHTML += `<div class="text-center mb-6">
+                <div class="text-6xl mb-4">${success ? '🏆' : '💀'}</div>
+                <h3 class="text-2xl font-bold text-gray-800">${success ? 'Survival Success!' : 'Survival Failed'}</h3>
+                <p class="text-gray-600">${message}</p>
+            </div>`;
+
+            // Survival stats
+            resultsHTML += `<div class="grid md:grid-cols-2 gap-4 mb-6">`;
+            resultsHTML += createStatCard('❤️ Health Left', gameState.resources.health, 'Physical condition');
+            resultsHTML += createStatCard('⚡ Energy Left', gameState.resources.energy, 'Available energy');
+            resultsHTML += createStatCard('🏠 Shelter Built', gameState.inventory.shelter, 'Protection level');
+            resultsHTML += createStatCard('🆘 Rescue Chance', gameState.rescueChance, 'Probability of rescue');
+            resultsHTML += `</div>`;
+
+            // Survival analysis
+            resultsHTML += `<div class="bg-gray-50 rounded-lg p-4 mb-4">
+                <h4 class="font-bold text-gray-800 mb-2">🏝️ Your Survival Analysis</h4>
+                <div class="text-sm text-gray-600">`;
+
+            if (gameState.inventory.shelter > 0) {
+                resultsHTML += `<p>✅ You built shelter - smart choice for protection!</p>`;
+            } else {
+                resultsHTML += `<p>⚠️ No shelter built - you were exposed to the elements.</p>`;
+            }
+
+            if (gameState.inventory.tools > 0) {
+                resultsHTML += `<p>✅ You crafted tools - this made survival easier!</p>`;
+            }
+
+            if (gameState.inventory.food > 0) {
+                resultsHTML += `<p>✅ You managed food supplies well.</p>`;
+            } else {
+                resultsHTML += `<p>⚠️ You ran out of food - this hurt your survival chances.</p>`;
+            }
+
+            if (gameState.rescueChance > 30) {
+                resultsHTML += `<p>✅ You actively signaled for help - great strategy!</p>`;
+            }
+
+            resultsHTML += `</div></div>`;
+
+            // Scarcity lesson
+            resultsHTML += `<div class="bg-blue-50 rounded-lg p-4">
+                <h4 class="font-bold text-gray-800 mb-2">🎯 What You Learned About Scarcity</h4>
+                <p class="text-sm text-gray-600">On the island, every resource was limited - your energy, time, food, water, and materials. You had to constantly make trade-offs: build shelter or gather food? Rest or explore? This is scarcity in its most basic form - when resources are limited, we must prioritize and choose what's most important for survival!</p>
+            </div>`;
+
+            resultsDiv.innerHTML = resultsHTML;
+            document.getElementById('resultsModal').classList.remove('hidden');
+        }
+
+        function createStatCard(label, value, description) {
+            let color = 'text-gray-600';
+            let emoji = '😐';
+            
+            if (value >= 80) {
+                color = 'text-green-600';
+                emoji = '😄';
+            } else if (value >= 60) {
+                color = 'text-blue-600';
+                emoji = '😊';
+            } else if (value >= 40) {
+                color = 'text-yellow-600';
+                emoji = '😐';
+            } else if (value >= 20) {
+                color = 'text-orange-600';
+                emoji = '😕';
+            } else {
+                color = 'text-red-600';
+                emoji = '😞';
+            }
+
+            return `
+                <div class="bg-white rounded-lg p-4 border">
+                    <div class="text-center">
+                        <div class="text-3xl mb-2">${emoji}</div>
+                        <div class="text-lg font-bold ${color}">${value}</div>
+                        <div class="text-sm text-gray-600">${label}</div>
+                        <div class="text-xs text-gray-500 mt-1">${description}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function resetGame() {
+            gameState = {
+                day: 1,
+                timeOfDay: 'Morning',
+                resources: {
+                    health: 100,
+                    energy: 100,
+                    hunger: 80,
+                    thirst: 70,
+                    morale: 50
+                },
+                inventory: {
+                    shelter: 0,
+                    tools: 0,
+                    fire: 0,
+                    food: 3,
+                    water: 2
+                },
+                selectedActions: [],
+                totalEnergy: 100,
+                rescueChance: 10
+            };
+
+            document.querySelectorAll('.resource-item').forEach(element => {
+                element.classList.remove('selected');
+            });
+
+            updateDisplay();
+            document.getElementById('resultsModal').classList.add('hidden');
+            showFeedback("🔄 Island reset! Try different survival strategies.");
+        }
+
+        function showInstructions() {
+            document.getElementById('instructionsModal').classList.remove('hidden');
+        }
+
+        function hideInstructions() {
+            document.getElementById('instructionsModal').classList.add('hidden');
+        }
+
+        function showFeedback(message) {
+            const feedback = document.createElement('div');
+            feedback.className = 'fixed top-20 right-6 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300';
+            feedback.textContent = message;
+            document.body.appendChild(feedback);
+
+            setTimeout(() => {
+                feedback.style.transform = 'translateX(0)';
+            }, 100);
+
+            setTimeout(() => {
+                feedback.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    document.body.removeChild(feedback);
+                }, 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

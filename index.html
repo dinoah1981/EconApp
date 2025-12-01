@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scarcity Simulator - Learn Economics Through Games</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://unpkg.com/splide@4.1.4/dist/js/splide.min.js"></script>
+    <link href="https://unpkg.com/splide@4.1.4/dist/css/splide.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Inter:wght@400;500;600&family=Fredoka+One&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF6B6B;
+            --secondary: #4ECDC4;
+            --accent: #FFE66D;
+            --dark: #2C3E50;
+            --light: #FEFEFE;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .hero-title {
+            font-family: 'Fredoka One', cursive;
+            background: linear-gradient(45deg, var(--primary), var(--secondary), var(--accent));
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 3s ease-in-out infinite;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .simulation-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .simulation-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 1);
+        }
+        
+        .floating-shape {
+            position: absolute;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            opacity: 0.1;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+        }
+        
+        .concept-badge {
+            background: linear-gradient(45deg, var(--accent), var(--primary));
+            color: var(--dark);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+    <!-- Floating Background Shapes -->
+    <div class="floating-shape w-32 h-32 top-20 left-10" style="animation-delay: 0s;"></div>
+    <div class="floating-shape w-24 h-24 top-40 right-20" style="animation-delay: 2s;"></div>
+    <div class="floating-shape w-40 h-40 bottom-32 left-1/4" style="animation-delay: 4s;"></div>
+    <div class="floating-shape w-20 h-20 bottom-20 right-1/3" style="animation-delay: 1s;"></div>
+
+    <!-- Navigation -->
+    <nav class="relative z-50 p-6">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="text-white text-2xl font-bold">🏫 Scarcity Simulator</div>
+            <div class="hidden md:flex space-x-6">
+                <a href="#about" class="text-white hover:text-yellow-300 transition-colors">About</a>
+                <a href="#simulations" class="text-white hover:text-yellow-300 transition-colors">Simulations</a>
+                <a href="learn-more.html" class="text-white hover:text-yellow-300 transition-colors">Learn More</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative z-10 pt-20 pb-32 px-6">
+        <div class="max-w-4xl mx-auto text-center">
+            <h1 class="hero-title text-6xl md:text-8xl font-bold mb-8 opacity-0" id="heroTitle">
+                Why Can't We Have Everything?
+            </h1>
+            <p class="text-xl md:text-2xl text-white mb-12 leading-relaxed opacity-0" id="heroSubtitle">
+                Discover the fascinating world of economics through interactive games that show why money, time, and resources force us to make tough choices every day.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-6 justify-center opacity-0" id="heroButtons">
+                <button onclick="scrollToSimulations()" class="btn-primary text-white px-8 py-4 rounded-full text-lg font-semibold">
+                    🎮 Start Playing
+                </button>
+                <button onclick="showAbout()" class="bg-white text-gray-800 px-8 py-4 rounded-full text-lg font-semibold hover:bg-gray-100 transition-colors">
+                    📚 Learn First
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="relative z-10 py-20 px-6 bg-white bg-opacity-95">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-16 text-gray-800">What is Scarcity?</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="text-center p-8">
+                    <div class="text-6xl mb-4">💰</div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-800">Limited Money</h3>
+                    <p class="text-gray-600 leading-relaxed">You can't buy everything you want because money is limited. Every purchase means giving up something else.</p>
+                </div>
+                <div class="text-center p-8">
+                    <div class="text-6xl mb-4">⏰</div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-800">Limited Time</h3>
+                    <p class="text-gray-600 leading-relaxed">There are only 24 hours in a day. Choosing to do one thing means not doing something else.</p>
+                </div>
+                <div class="text-center p-8">
+                    <div class="text-6xl mb-4">🌍</div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-800">Limited Resources</h3>
+                    <p class="text-gray-600 leading-relaxed">The world has finite resources. We can't all have everything, so we must make choices.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Simulations Section -->
+    <section id="simulations" class="relative z-10 py-20 px-6">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-4 text-white">Choose Your Adventure</h2>
+            <p class="text-xl text-center mb-16 text-white opacity-90">Each game teaches scarcity in a different way. Try them all!</p>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Pizza Parlor Simulation -->
+                <div class="simulation-card rounded-2xl p-8 text-center">
+                    <div class="text-6xl mb-4">🍕</div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-800">Pizza Parlor</h3>
+                    <p class="text-gray-600 mb-6 leading-relaxed">Run a pizza restaurant with limited ingredients and money. Every topping choice matters!</p>
+                    <div class="concept-badge inline-block px-3 py-1 rounded-full text-sm mb-6">Resource Allocation</div>
+                    <button onclick="startSimulation('pizza-parlor')" class="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-semibold transition-colors">
+                        Start Game
+                    </button>
+                </div>
+
+                <!-- Time Management -->
+                <div class="simulation-card rounded-2xl p-8 text-center">
+                    <div class="text-6xl mb-4">⏰</div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-800">Time Crunch</h3>
+                    <p class="text-gray-600 mb-6 leading-relaxed">You have 24 hours. How will you spend them? Sleep, homework, friends, or fun?</p>
+                    <div class="concept-badge inline-block px-3 py-1 rounded-full text-sm mb-6">Time Scarcity</div>
+                    <button onclick="startSimulation('time-management')" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-semibold transition-colors">
+                        Start Game
+                    </button>
+                </div>
+
+                <!-- Budget Game -->
+                <div class="simulation-card rounded-2xl p-8 text-center">
+                    <div class="text-6xl mb-4">💸</div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-800">Budget Boss</h3>
+                    <p class="text-gray-600 mb-6 leading-relaxed">Manage your weekly allowance. Can you afford everything you want, or will you have to choose?</p>
+                    <div class="concept-badge inline-block px-3 py-1 rounded-full text-sm mb-6">Money Scarcity</div>
+                    <button onclick="startSimulation('budget-game')" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-semibold transition-colors">
+                        Start Game
+                    </button>
+                </div>
+
+                <!-- Island Survival -->
+                <div class="simulation-card rounded-2xl p-8 text-center">
+                    <div class="text-6xl mb-4">🏝️</div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-800">Island Survival</h3>
+                    <p class="text-gray-600 mb-6 leading-relaxed">Stranded on an island with limited resources. How will you survive and thrive?</p>
+                    <div class="concept-badge inline-block px-3 py-1 rounded-full text-sm mb-6">Resource Management</div>
+                    <button onclick="startSimulation('island-survival')" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-semibold transition-colors">
+                        Start Game
+                    </button>
+                </div>
+
+                <!-- Economic Analysis Simulator -->
+                <div class="simulation-card rounded-2xl p-8 text-center">
+                    <div class="text-6xl mb-4">🧠</div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-800">Economic Analysis</h3>
+                    <p class="text-gray-600 mb-6 leading-relaxed">
+                        Analyze real-world scenarios using economic concepts. Understand how individuals, families, communities, and governments make decisions.
+                    </p>
+                    <div class="concept-badge inline-block px-3 py-1 rounded-full text-sm mb-6">Critical Thinking</div>
+                    <button onclick="window.location.href='economic-analysis.html'" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-3 rounded-lg font-semibold transition-colors">
+                        Start Analysis
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Achievement Section -->
+    <section class="relative z-10 py-20 px-6 bg-white bg-opacity-95">
+        <div class="max-w-4xl mx-auto text-center">
+            <h2 class="text-4xl font-bold mb-8 text-gray-800">Track Your Progress</h2>
+            <p class="text-xl text-gray-600 mb-12">Complete all simulations to earn your Scarcity Expert badge!</p>
+            <div class="grid md:grid-cols-4 gap-6">
+                <div class="achievement-item p-6 bg-gray-100 rounded-lg">
+                    <div class="text-4xl mb-2">🍕</div>
+                    <div class="text-sm text-gray-600">Pizza Master</div>
+                </div>
+                <div class="achievement-item p-6 bg-gray-100 rounded-lg">
+                    <div class="text-4xl mb-2">⏰</div>
+                    <div class="text-sm text-gray-600">Time Manager</div>
+                </div>
+                <div class="achievement-item p-6 bg-gray-100 rounded-lg">
+                    <div class="text-4xl mb-2">💸</div>
+                    <div class="text-sm text-gray-600">Budget Pro</div>
+                </div>
+                <div class="achievement-item p-6 bg-gray-100 rounded-lg">
+                    <div class="text-4xl mb-2">🏝️</div>
+                    <div class="text-sm text-gray-600">Survivor</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="relative z-10 py-12 px-6 bg-gray-900 text-white text-center">
+        <div class="max-w-4xl mx-auto">
+            <p class="text-lg mb-4">🎓 Learning economics through interactive experiences</p>
+            <p class="text-gray-400">© 2024 Scarcity Simulator - Educational Resource</p>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize animations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hero title animation
+            anime({
+                targets: '#heroTitle',
+                opacity: [0, 1],
+                translateY: [50, 0],
+                duration: 1000,
+                easing: 'easeOutExpo',
+                delay: 500
+            });
+
+            // Hero subtitle animation
+            anime({
+                targets: '#heroSubtitle',
+                opacity: [0, 1],
+                translateY: [30, 0],
+                duration: 1000,
+                easing: 'easeOutExpo',
+                delay: 800
+            });
+
+            // Hero buttons animation
+            anime({
+                targets: '#heroButtons',
+                opacity: [0, 1],
+                translateY: [20, 0],
+                duration: 1000,
+                easing: 'easeOutExpo',
+                delay: 1100
+            });
+
+            // Simulation cards entrance animation
+            anime({
+                targets: '.simulation-card',
+                opacity: [0, 1],
+                translateY: [50, 0],
+                duration: 800,
+                easing: 'easeOutExpo',
+                delay: anime.stagger(200, {start: 1500})
+            });
+        });
+
+        function scrollToSimulations() {
+            document.getElementById('simulations').scrollIntoView({ 
+                behavior: 'smooth' 
+            });
+        }
+
+        function showAbout() {
+            document.getElementById('about').scrollIntoView({ 
+                behavior: 'smooth' 
+            });
+        }
+
+        function startSimulation(gameType) {
+            // Add loading animation
+            const button = event.target;
+            button.innerHTML = '🚀 Loading...';
+            button.disabled = true;
+
+            // Simulate loading time and redirect
+            setTimeout(() => {
+                window.location.href = `${gameType}.html`;
+            }, 1000);
+        }
+
+        // Add scroll animations
+        window.addEventListener('scroll', function() {
+            const elements = document.querySelectorAll('.simulation-card');
+            elements.forEach(element => {
+                const elementTop = element.getBoundingClientRect().top;
+                const elementVisible = 150;
+                
+                if (elementTop < window.innerHeight - elementVisible) {
+                    element.style.opacity = '1';
+                    element.style.transform = 'translateY(0)';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
