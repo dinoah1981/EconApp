@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Boss - Scarcity Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Inter:wght@400;500;600&family=Fredoka+One&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF6B6B;
+            --secondary: #4ECDC4;
+            --accent: #FFE66D;
+            --dark: #2C3E50;
+            --light: #FEFEFE;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .game-title {
+            font-family: 'Fredoka One', cursive;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .game-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .purchase-item {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .purchase-item:hover {
+            border-color: var(--primary);
+            transform: scale(1.02);
+        }
+        
+        .purchase-item.selected {
+            border-color: var(--secondary);
+            background: rgba(78, 205, 196, 0.1);
+        }
+        
+        .purchase-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: rgba(200, 200, 200, 0.5);
+        }
+        
+        .budget-bar {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            height: 12px;
+            border-radius: 6px;
+            transition: width 0.5s ease;
+        }
+        
+        .btn-action {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            transition: all 0.3s ease;
+        }
+        
+        .btn-action:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+        }
+        
+        .btn-action:disabled {
+            background: #ccc;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        
+        .shopping-cart {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .price-tag {
+            background: linear-gradient(45deg, var(--accent), var(--primary));
+            color: var(--dark);
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+    <!-- Navigation -->
+    <nav class="relative z-50 p-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="text-white text-xl font-bold">💸 Budget Boss</div>
+            <div class="flex items-center space-x-4">
+                <div class="text-white text-sm">💰 Budget: $<span id="budgetDisplay" class="font-bold">100</span></div>
+                <div class="text-white text-sm">💳 Spent: $<span id="spentDisplay" class="font-bold">0</span></div>
+                <button onclick="showInstructions()" class="text-white hover:text-yellow-300 transition-colors text-sm">❓ Help</button>
+                <button onclick="window.location.href='index.html'" class="text-white hover:text-yellow-300 transition-colors text-sm">🏠 Home</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Game Header -->
+    <section class="relative z-10 pt-8 pb-8 px-6">
+        <div class="max-w-7xl mx-auto text-center">
+            <h1 class="game-title text-4xl md:text-6xl font-bold mb-4">Weekly Allowance Challenge</h1>
+            <p class="text-white text-lg mb-8">You have $100 for the week. Can you afford everything you want, or will you have to choose?</p>
+        </div>
+    </section>
+
+    <!-- Game Interface -->
+    <section class="relative z-10 pb-20 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid lg:grid-cols-3 gap-8">
+                <!-- Shopping Items -->
+                <div class="game-card rounded-2xl p-6 lg:col-span-2">
+                    <h3 class="text-2xl font-bold mb-6 text-gray-800">🛒 What Will You Buy?</h3>
+                    <p class="text-gray-600 mb-6">Click items to add them to your cart. Watch your budget!</p>
+                    
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <!-- Food Category -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
+                                🍕 Food & Drinks
+                            </h4>
+                            <div class="space-y-3">
+                                <div class="purchase-item rounded-lg p-4" data-item="pizza" data-cost="15" data-category="food">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">🍕</div>
+                                            <div>
+                                                <div class="font-semibold">Pizza Night</div>
+                                                <div class="text-sm text-gray-600">Friday dinner</div>
+                                            </div>
+                                        </div>
+                                        <div class="price-tag">$15</div>
+                                    </div>
+                                </div>
+
+                                <div class="purchase-item rounded-lg p-4" data-item="coffee" data-cost="4" data-category="food">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">☕</div>
+                                            <div>
+                                                <div class="font-semibold">Daily Coffee</div>
+                                                <div class="text-sm text-gray-600">$4 × 7 days</div>
+                                            </div>
+                                        </div>
+                                        <div class="price-tag">$28</div>
+                                    </div>
+                                </div>
+
+                                <div class="purchase-item rounded-lg p-4" data-item="lunch" data-cost="8" data-category="food">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">🥪</div>
+                                            <div>
+                                                <div class="font-semibold">School Lunch</div>
+                                                <div class="text-sm text-gray-600">$8 × 5 days</div>
+                                            </div>
+                                        </div>
+                                        <div class="price-tag">$40</div>
+                                    </div>
+                                </div>
+
+                                <div class="purchase-item rounded-lg p-4" data-item="snacks" data-cost="12" data-category="food">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">🍿</div>
+                                            <div>
+                                                <div class="font-semibold">Movie Snacks</div>
+                                                <div class="text-sm text-gray-600">Weekend treats</div>
+                                            </div>
+                                        </div>
+                                        <div class="price-tag">$12</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Entertainment Category -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
+                                🎮 Entertainment
+                            </h4>
+                            <div class="space-y-3">
+                                <div class="purchase-item rounded-lg p-4" data-item="game" data-cost="25" data-category="entertainment">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">🎮</div>
+                                            <div>
+                                                <div class="font-semibold">New Video Game</div>
+                                                <div class="text-sm text-gray-600">Latest release</div>
+                                            </div>
+                                        </div>
+                                        <div class="price-tag">$25</div>
+                                    </div>
+                                </div>
+
+                                <div class="purchase-item rounded-lg p-4" data-item="movie" data-cost="12" data-category="entertainment">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">🎬</div>
+                                            <div>
+                                                <div class="font-semibold">Movie Tickets</div>
+                                                <div class="text-sm text-gray-600">Weekend with friends</div>
+                                            </div>
+                                        </div>
+                                        <div class="price-tag">$12</div>
+                                    </div>
+                                </div>
+
+                                <div class="purchase-item rounded-lg p-4" data-item="streaming" data-cost="10" data-category="entertainment">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">📺</div>
+                                            <div>
+                                                <div class="font-semibold">Streaming Service</div>
+                                                <div class="text-sm text-gray-600">Monthly subscription</div>
+                                            </div>
+                                        </div>
+                                        <div class="price-tag">$10</div>
+                                    </div>
+                                </div>
+
+                                <div class="purchase-item rounded-lg p-4" data-item="music" data-cost="8" data-category="entertainment">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">🎵</div>
+                                            <div>
+                                                <div class="font-semibold">Music Album</div>
+                                                <div class="text-sm text-gray-600">Favorite artist</div>
+                                            </div>
+                                        </div>
+                                        <div class="price-tag">$8</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Personal Care Category -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
+                                💄 Personal Care
+                            </h4>
+                            <div class="space-y-3">
+                                <div class="purchase-item rounded-lg p-4" data-item="clothes" data-cost="30" data-category="personal">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">👕</div>
+                                            <div>
+                                                <div class="font-semibold">New Clothes</div>
+                                                <div class="text-sm text-gray-600">Outfit for school</div>
+                                            </div>
+                                        </div>
+                                        <div class="price-tag">$30</div>
+                                    </div>
+                                </div>
+
+                                <div class="purchase-item rounded-lg p-4" data-item="skincare" data-cost="15" data-category="personal">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">🧴</div>
+                                            <div>
+                                                <div class="font-semibold">Skincare Products</div>
+                                                <div class="text-sm text-gray-600">Weekly essentials</div>
+                                            </div>
+                                        </div>
+                                        <div class="price-tag">$15</div>
+                                    </div>
+                                </div>
+
+                                <div class="purchase-item rounded-lg p-4" data-item="haircut" data-cost="20" data-category="personal">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">💇</div>
+                                            <div>
+                                                <div class="font-semibold">Haircut</div>
+                                                <div class="text-sm text-gray-600">Monthly trim</div>
+                                            </div>
+                                        </div>
+                                        <div class="price-tag">$20</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Transportation Category -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
+                                🚌 Transportation
+                            </h4>
+                            <div class="space-y-3">
+                                <div class="purchase-item rounded-lg p-4" data-item="bus" data-cost="15" data-category="transport">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">🚌</div>
+                                            <div>
+                                                <div class="font-semibold">Bus Pass</div>
+                                                <div class="text-sm text-gray-600">Weekly transportation</div>
+                                            </div>
+                                        </div>
+                                        <div class="price-tag">$15</div>
+                                    </div>
+                                </div>
+
+                                <div class="purchase-item rounded-lg p-4" data-item="uber" data-cost="18" data-category="transport">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">🚗</div>
+                                            <div>
+                                                <div class="font-semibold">Ride Share</div>
+                                                <div class="text-sm text-gray-600">Weekend trips</div>
+                                            </div>
+                                        </div>
+                                        <div class="price-tag">$18</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Savings Category -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
+                                💰 Savings & Goals
+                            </h4>
+                            <div class="space-y-3">
+                                <div class="purchase-item rounded-lg p-4" data-item="savings" data-cost="20" data-category="savings">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">🏦</div>
+                                            <div>
+                                                <div class="font-semibold">Save Money</div>
+                                                <div class="text-sm text-gray-600">For future goals</div>
+                                            </div>
+                                        </div>
+                                        <div class="price-tag">$20</div>
+                                    </div>
+                                </div>
+
+                                <div class="purchase-item rounded-lg p-4" data-item="donation" data-cost="5" data-category="savings">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-3xl">❤️</div>
+                                            <div>
+                                                <div class="font-semibold">Charity Donation</div>
+                                                <div class="text-sm text-gray-600">Help others in need</div>
+                                            </div>
+                                        </div>
+                                        <div class="price-tag">$5</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Budget Tracker -->
+                <div class="game-card rounded-2xl p-6">
+                    <h3 class="text-2xl font-bold mb-6 text-gray-800">💰 Budget Tracker</h3>
+                    
+                    <!-- Budget Progress -->
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-semibold text-gray-700">Budget Used</span>
+                            <span id="budgetPercent" class="font-bold text-blue-600">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-4">
+                            <div id="budgetBar" class="budget-bar h-4 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <div class="flex justify-between text-sm text-gray-600 mt-1">
+                            <span>$0</span>
+                            <span>$100</span>
+                        </div>
+                    </div>
+
+                    <!-- Shopping Cart -->
+                    <div class="mb-6">
+                        <h4 class="font-bold text-gray-800 mb-3">🛒 Your Cart (<span id="cartCount">0</span> items)</h4>
+                        <div id="shoppingCart" class="shopping-cart space-y-2 bg-gray-50 rounded-lg p-4 min-h-32">
+                            <div class="text-center text-gray-500 py-8">
+                                Your cart is empty
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Budget Summary -->
+                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                        <h4 class="font-bold text-gray-800 mb-3">📊 Budget Summary</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span>Total Budget:</span>
+                                <span class="font-bold text-green-600">$100</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Amount Spent:</span>
+                                <span id="totalSpent" class="font-bold text-red-600">$0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Remaining:</span>
+                                <span id="remainingBudget" class="font-bold text-blue-600">$100</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category Breakdown -->
+                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                        <h4 class="font-bold text-gray-800 mb-3">📈 Spending by Category</h4>
+                        <div id="categoryBreakdown" class="space-y-1 text-sm">
+                            <div class="flex justify-between">
+                                <span>🍕 Food:</span>
+                                <span class="font-bold">$0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>🎮 Entertainment:</span>
+                                <span class="font-bold">$0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>💄 Personal Care:</span>
+                                <span class="font-bold">$0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>🚌 Transportation:</span>
+                                <span class="font-bold">$0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>💰 Savings:</span>
+                                <span class="font-bold">$0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <button id="clearCartBtn" onclick="clearCart()" class="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 rounded-lg font-semibold transition-colors">
+                            🗑️ Clear Cart
+                        </button>
+                        <button onclick="finishShopping()" class="w-full btn-action text-white py-3 rounded-lg font-semibold">
+                            ✅ Finish Shopping
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Instructions Modal -->
+    <div id="instructionsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-6">
+        <div class="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-96 overflow-y-auto">
+            <h2 class="text-3xl font-bold mb-6 text-gray-800">💸 How to Play Budget Boss</h2>
+            <div class="space-y-4 text-gray-600">
+                <p><strong>Goal:</strong> Spend your $100 weekly allowance wisely on things you want and need!</p>
+                <p><strong>The Challenge:</strong> You can't buy everything. Every purchase means giving up something else.</p>
+                <p><strong>How to Play:</strong> Click items to add them to your cart. Watch your budget and make smart choices!</p>
+                <p><strong>Strategy:</strong> Balance wants vs needs, consider what's most important to you.</p>
+                <p><strong>Learning:</strong> Experience how money scarcity forces us to prioritize and make trade-offs!</p>
+            </div>
+            <button onclick="hideInstructions()" class="mt-6 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold">
+                Got it! Let's Shop
+            </button>
+        </div>
+    </div>
+
+    <!-- Results Modal -->
+    <div id="resultsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-6">
+        <div class="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-96 overflow-y-auto">
+            <h2 class="text-3xl font-bold mb-6 text-gray-800">🛒 Your Shopping Results</h2>
+            <div id="finalResults" class="space-y-4 text-gray-600">
+                <!-- Results will be populated here -->
+            </div>
+            <button onclick="resetGame()" class="mt-6 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold mr-4">
+                Shop Again
+            </button>
+            <button onclick="window.location.href='index.html'" class="mt-6 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold">
+                Back to Home
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let gameState = {
+            budget: 100,
+            spent: 0,
+            cart: [],
+            categoryTotals: {
+                food: 0,
+                entertainment: 0,
+                personal: 0,
+                transport: 0,
+                savings: 0
+            }
+        };
+
+        // Item data
+        const items = {
+            pizza: { name: 'Pizza Night', cost: 15, category: 'food', emoji: '🍕' },
+            coffee: { name: 'Daily Coffee', cost: 28, category: 'food', emoji: '☕' },
+            lunch: { name: 'School Lunch', cost: 40, category: 'food', emoji: '🥪' },
+            snacks: { name: 'Movie Snacks', cost: 12, category: 'food', emoji: '🍿' },
+            game: { name: 'New Video Game', cost: 25, category: 'entertainment', emoji: '🎮' },
+            movie: { name: 'Movie Tickets', cost: 12, category: 'entertainment', emoji: '🎬' },
+            streaming: { name: 'Streaming Service', cost: 10, category: 'entertainment', emoji: '📺' },
+            music: { name: 'Music Album', cost: 8, category: 'entertainment', emoji: '🎵' },
+            clothes: { name: 'New Clothes', cost: 30, category: 'personal', emoji: '👕' },
+            skincare: { name: 'Skincare Products', cost: 15, category: 'personal', emoji: '🧴' },
+            haircut: { name: 'Haircut', cost: 20, category: 'personal', emoji: '💇' },
+            bus: { name: 'Bus Pass', cost: 15, category: 'transport', emoji: '🚌' },
+            uber: { name: 'Ride Share', cost: 18, category: 'transport', emoji: '🚗' },
+            savings: { name: 'Save Money', cost: 20, category: 'savings', emoji: '🏦' },
+            donation: { name: 'Charity Donation', cost: 5, category: 'savings', emoji: '❤️' }
+        };
+
+        // Initialize game
+        document.addEventListener('DOMContentLoaded', function() {
+            setupItemSelection();
+            showInstructions();
+        });
+
+        function setupItemSelection() {
+            const purchaseItems = document.querySelectorAll('.purchase-item');
+            purchaseItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const itemId = this.dataset.item;
+                    toggleItem(itemId, this);
+                });
+            });
+        }
+
+        function toggleItem(itemId, element) {
+            const item = items[itemId];
+            const isInCart = gameState.cart.includes(itemId);
+
+            if (isInCart) {
+                // Remove from cart
+                removeFromCart(itemId, element);
+            } else {
+                // Add to cart if affordable
+                if (gameState.spent + item.cost <= gameState.budget) {
+                    addToCart(itemId, element);
+                } else {
+                    showFeedback("💸 Not enough money! Remove something first.");
+                }
+            }
+        }
+
+        function addToCart(itemId, element) {
+            const item = items[itemId];
+            
+            gameState.cart.push(itemId);
+            gameState.spent += item.cost;
+            gameState.categoryTotals[item.category] += item.cost;
+            
+            element.classList.add('selected');
+            
+            updateDisplay();
+            updateShoppingCart();
+            showFeedback(`✅ Added ${item.name} to cart!`);
+        }
+
+        function removeFromCart(itemId, element) {
+            const item = items[itemId];
+            
+            gameState.cart = gameState.cart.filter(id => id !== itemId);
+            gameState.spent -= item.cost;
+            gameState.categoryTotals[item.category] -= item.cost;
+            
+            element.classList.remove('selected');
+            
+            updateDisplay();
+            updateShoppingCart();
+            showFeedback(`🗑️ Removed ${item.name} from cart.`);
+        }
+
+        function updateShoppingCart() {
+            const cartDiv = document.getElementById('shoppingCart');
+            
+            if (gameState.cart.length === 0) {
+                cartDiv.innerHTML = `
+                    <div class="text-center text-gray-500 py-8">
+                        Your cart is empty
+                    </div>
+                `;
+            } else {
+                cartDiv.innerHTML = gameState.cart.map(itemId => {
+                    const item = items[itemId];
+                    return `
+                        <div class="flex items-center justify-between bg-white rounded p-2">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-lg">${item.emoji}</span>
+                                <span class="text-sm font-semibold">${item.name}</span>
+                            </div>
+                            <span class="text-sm font-bold text-green-600">$${item.cost}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function updateDisplay() {
+            document.getElementById('budgetDisplay').textContent = gameState.budget;
+            document.getElementById('spentDisplay').textContent = gameState.spent;
+            document.getElementById('cartCount').textContent = gameState.cart.length;
+            document.getElementById('totalSpent').textContent = `$${gameState.spent}`;
+            document.getElementById('remainingBudget').textContent = `$${gameState.budget - gameState.spent}`;
+
+            // Update budget bar
+            const budgetPercent = (gameState.spent / gameState.budget) * 100;
+            document.getElementById('budgetPercent').textContent = `${Math.round(budgetPercent)}%`;
+            document.getElementById('budgetBar').style.width = `${budgetPercent}%`;
+
+            // Update category breakdown
+            updateCategoryBreakdown();
+
+            // Update item states (affordable vs not)
+            updateItemAffordability();
+        }
+
+        function updateCategoryBreakdown() {
+            const categories = {
+                food: '🍕 Food',
+                entertainment: '🎮 Entertainment',
+                personal: '💄 Personal Care',
+                transport: '🚌 Transportation',
+                savings: '💰 Savings'
+            };
+
+            const breakdownDiv = document.getElementById('categoryBreakdown');
+            breakdownDiv.innerHTML = Object.entries(categories).map(([key, label]) => {
+                const spent = gameState.categoryTotals[key];
+                return `
+                    <div class="flex justify-between">
+                        <span>${label}:</span>
+                        <span class="font-bold ${spent > 0 ? 'text-blue-600' : 'text-gray-400'}">$${spent}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateItemAffordability() {
+            document.querySelectorAll('.purchase-item').forEach(element => {
+                const itemId = element.dataset.item;
+                const item = items[itemId];
+                const canAfford = gameState.spent + item.cost <= gameState.budget;
+                const isSelected = element.classList.contains('selected');
+                
+                if (!canAfford && !isSelected) {
+                    element.classList.add('disabled');
+                } else {
+                    element.classList.remove('disabled');
+                }
+            });
+        }
+
+        function clearCart() {
+            gameState.cart = [];
+            gameState.spent = 0;
+            
+            Object.keys(gameState.categoryTotals).forEach(category => {
+                gameState.categoryTotals[category] = 0;
+            });
+
+            document.querySelectorAll('.purchase-item').forEach(element => {
+                element.classList.remove('selected');
+            });
+
+            updateDisplay();
+            updateShoppingCart();
+            showFeedback("🗑️ Cart cleared! Start fresh.");
+        }
+
+        function finishShopping() {
+            if (gameState.cart.length === 0) {
+                showFeedback("⚠️ You haven't bought anything!");
+                return;
+            }
+
+            const resultsDiv = document.getElementById('finalResults');
+            let resultsHTML = '';
+
+            // Overall assessment
+            const savings = gameState.categoryTotals.savings;
+            const foodSpending = gameState.categoryTotals.food;
+            const entertainmentSpending = gameState.categoryTotals.entertainment;
+            const remaining = gameState.budget - gameState.spent;
+
+            resultsHTML += `<div class="text-center mb-6">
+                <div class="text-6xl mb-4">🛒</div>
+                <h3 class="text-2xl font-bold text-gray-800">Your Shopping Results</h3>
+                <p class="text-gray-600">You spent $${gameState.spent} out of $${gameState.budget}</p>
+            </div>`;
+
+            // Spending breakdown
+            resultsHTML += `<div class="grid md:grid-cols-2 gap-4 mb-6">`;
+            resultsHTML += createSpendingCard('💰 Total Spent', gameState.spent, 'Your total spending');
+            resultsHTML += createSpendingCard('💵 Money Left', remaining, 'Budget remaining');
+            resultsHTML += createSpendingCard('🍕 Food', foodSpending, 'Food & drinks');
+            resultsHTML += createSpendingCard('🎮 Fun', entertainmentSpending, 'Entertainment');
+            resultsHTML += `</div>`;
+
+            // Personalized feedback
+            resultsHTML += `<div class="bg-gray-50 rounded-lg p-4 mb-4">
+                <h4 class="font-bold text-gray-800 mb-2">💡 Your Spending Analysis</h4>
+                <div class="text-sm text-gray-600">`;
+
+            if (savings >= 20) {
+                resultsHTML += `<p>✅ Great job saving money! You're planning for the future.</p>`;
+            } else if (savings === 0) {
+                resultsHTML += `<p>⚠️ You didn't save anything this week. Consider setting aside some money next time.</p>`;
+            }
+
+            if (foodSpending > 50) {
+                resultsHTML += `<p>🍕 You spent a lot on food! Maybe try cooking at home more often?</p>`;
+            }
+
+            if (entertainmentSpending > 40) {
+                resultsHTML += `<p>🎮 Lots of entertainment spending! Make sure you're getting good value for your money.</p>`;
+            }
+
+            if (remaining > 30) {
+                resultsHTML += `<p>💡 You have money left over! Consider saving it or treating yourself to something special.</p>`;
+            } else if (remaining < 5) {
+                resultsHTML += `<p>💸 You used almost your entire budget! Hope you got everything you needed.</p>`;
+            }
+
+            resultsHTML += `</div></div>`;
+
+            // Scarcity lesson
+            resultsHTML += `<div class="bg-blue-50 rounded-lg p-4">
+                <h4 class="font-bold text-gray-800 mb-2">🎯 What You Learned About Scarcity</h4>
+                <p class="text-sm text-gray-600">Money is limited, so you can't buy everything you want. Every purchase means giving up something else. This forces you to prioritize what's most important to you - whether that's immediate enjoyment, future savings, or helping others!</p>
+            </div>`;
+
+            resultsDiv.innerHTML = resultsHTML;
+            document.getElementById('resultsModal').classList.remove('hidden');
+        }
+
+        function createSpendingCard(label, amount, description) {
+            let color = 'text-gray-600';
+            let emoji = '💰';
+            
+            if (amount >= 50) {
+                color = 'text-red-600';
+                emoji = '💸';
+            } else if (amount >= 25) {
+                color = 'text-orange-600';
+                emoji = '💳';
+            } else if (amount > 0) {
+                color = 'text-blue-600';
+                emoji = '💵';
+            } else {
+                color = 'text-gray-400';
+                emoji = '❌';
+            }
+
+            return `
+                <div class="bg-white rounded-lg p-4 border">
+                    <div class="text-center">
+                        <div class="text-3xl mb-2">${emoji}</div>
+                        <div class="text-lg font-bold ${color}">$${amount}</div>
+                        <div class="text-sm text-gray-600">${label}</div>
+                        <div class="text-xs text-gray-500 mt-1">${description}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function resetGame() {
+            gameState = {
+                budget: 100,
+                spent: 0,
+                cart: [],
+                categoryTotals: {
+                    food: 0,
+                    entertainment: 0,
+                    personal: 0,
+                    transport: 0,
+                    savings: 0
+                }
+            };
+
+            document.querySelectorAll('.purchase-item').forEach(element => {
+                element.classList.remove('selected');
+            });
+
+            updateDisplay();
+            updateShoppingCart();
+            document.getElementById('resultsModal').classList.add('hidden');
+            showFeedback("🔄 Budget reset! Try different choices.");
+        }
+
+        function showInstructions() {
+            document.getElementById('instructionsModal').classList.remove('hidden');
+        }
+
+        function hideInstructions() {
+            document.getElementById('instructionsModal').classList.add('hidden');
+        }
+
+        function showFeedback(message) {
+            const feedback = document.createElement('div');
+            feedback.className = 'fixed top-20 right-6 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300';
+            feedback.textContent = message;
+            document.body.appendChild(feedback);
+
+            setTimeout(() => {
+                feedback.style.transform = 'translateX(0)';
+            }, 100);
+
+            setTimeout(() => {
+                feedback.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    document.body.removeChild(feedback);
+                }, 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
